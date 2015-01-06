@@ -160,7 +160,7 @@ class GuiMaker(tk.Frame,GuiApi):
 			command					=	self.help).pack(side=tk.RIGHT)
 	
 	def varCheck(self,funct,thewidg,dict_name,text=None):	#Adds textvariables to widgets on creation from customform and toolbar
-		if funct==tk.Entry or funct==tk.Label or funct == ttk.Entry or funct==ttk.Label:
+		if funct == tk.Entry or funct ==tk.Label or funct == ttk.Entry or funct==ttk.Label:
 			tkvar=tk.StringVar()
 			thewidg.config(textvariable=tkvar)
 			if text != None or type(list):tkvar.set(text)
@@ -293,7 +293,7 @@ class GuiMaker(tk.Frame,GuiApi):
 				text()
 			wid.caller=self	#easier accessing of caller then using the self.app.fkds.fsd.	#hopefully doesnt clash with self.caller in winRef
 		
-		if dict_name !=None and default_packager: 			#save widg reference, if default packager is true then toolbar is creating the files and we don't need the refernece here
+		if dict_name and default_packager: 			#save widg reference, if default packager is true then toolbar is creating the files and we don't need the refernece here
 				if type(text) != list:						#do not want a text property set for images
 					self.varCheck(funct,wid,dict_name,text)
 				self.formRef[dict_name]=wid
@@ -630,7 +630,6 @@ class GuiNoteBook(GuiMaker):
 					#~ if self.parent==self.nB: 
 					self.winRef(i,widg,self.nB,None,self.app)
 					self.nB.add(self.widget_ref[i],text=self.tabText[i], padding=self.padding[i],sticky=self.widgSide[i])
-					
 							
 					if self.widgStyle[i]:	
 						if type(self.widgStyle[i]) == dict:
