@@ -18,12 +18,14 @@ def read_settings():
 			char = first_letter(row)
 			if char not in ('/','\\', '','') and char:	# Ignore Comments and blank lines
 				setting = row[0]
-				cfg_values = row[1:]
+				cfg_values = []
 				for i, value in enumerate(row[1:]):
-					del cfg_values[i]					# remove the old string contain tabs
 					for j, sub_sec in enumerate(value.split('\t')):
-						cfg_values.insert(i+j, sub_sec)	# add the newly split peaces in sameorder
+						sub_sec = sub_sec.replace('(','')
+						sub_sec = sub_sec.replace(')','')
+						cfg_values.append(sub_sec)	# add the newly split peaces in sameorder
 				cfg_settings[setting] = cfg_values		# save the setting and values 
+	#~ pprint(cfg_settings)
 	return cfg_settings
 			
 

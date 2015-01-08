@@ -13,8 +13,8 @@ class MainApplication():
 		self.main_gui = gui_d2settings.Gui_Main(self.root)
 		
 		#~ self.main_gui.load_cfg()
-		self.cfg_settings = d2_func.read_settings()		# Read autoexe.cfg into array
-		self.main_gui.load_cfg(self.cfg_settings)				# Load The Users Data into Gui
+		self.cfg_settings = d2_func.read_settings()				# Read autoexe.cfg into array
+		#~ self.main_gui.load_cfg(self.cfg_settings)				# Load The Users Data into Gui
 
 		self.root.mainloop()
 

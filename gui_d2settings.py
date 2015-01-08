@@ -21,9 +21,17 @@ class Gui_Main(gui_maker.GuiMakerWindowMenu):	#controler of page
 				#~ print(setting)
 				for cfg_setting, values in cfg.items():
 					if setting == cfg_setting:
-						print(setting, values)
-						tkvar.set(values[0])
-						break
+						if len(cfg_setting) > 1 and values[0] not in ('//'):	# The setting has a value associated with it
+							print('value assocated', values[0])
+							print(setting, values)
+							print()
+							tkvar.set(values[0])
+							break
+						else:
+							print('No Value associated')
+							print(setting,values[0])
+							print()
+							break
 				else:
 					print('NO MATCH', setting)
 				#~ value = tkvar.get()
@@ -100,20 +108,20 @@ class InternetSettings(gui_maker.GuiMakerWindowMenu):
 	def start(self):
 		self.customForm	= 	[
 			((ttk.Label, 'rate', None,		cfg_grid,{}),
-			(ttk.Entry, 'rate', 'rate',		cfg_grid,{})),
+			(ttk.Entry, '', 'rate',		cfg_grid,{})),
 			
 			((ttk.Label, 'cl_updaterate',None,		cfg_grid,{}),
-			(ttk.Entry, 'cl_updaterate','cl_updaterate',		cfg_grid,{})),
+			(ttk.Entry, '','cl_updaterate',		cfg_grid,{})),
 			
 			((ttk.Label, 'cl_cmdrate',None,		cfg_grid,{}),
-			(ttk.Entry, 'cl_cmdrate','cl_cmdrate',		cfg_grid,{})),
+			(ttk.Entry, '','cl_cmdrate',		cfg_grid,{})),
 			
 			
 			((ttk.Label, 'cl_interp',None,		cfg_grid,{}),
-			(ttk.Entry, 'cl_interp_ratio','cl_interp_ratio',		cfg_grid,{})),
+			(ttk.Entry, '','cl_interp_ratio',		cfg_grid,{})),
 			
 			((ttk.Label, 'cl_smoothtime',None,		cfg_grid,{}),
-			(ttk.Entry, 'cl_smoothtime','cl_smoothtime',		cfg_grid,{})),
+			(ttk.Entry, '','cl_smoothtime',		cfg_grid,{})),
 			
 			((ttk.Label, 'dota_pain_fade_rate',None,		cfg_grid,{}),
 			(ttk.Entry, '','dota_pain_fade_rate',		cfg_grid,{})),
