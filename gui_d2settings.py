@@ -5,29 +5,57 @@ from pprint import pprint
 import gui_maker
 from defaults_gui import *
 import batteries
-
-class HotKeyGrabber(batteries.HotKeyGrabberMaker):pass
-
-class Gui_Main(gui_maker.GuiMakerWindowMenu):	#controler of page
+	
+class HotKeyGrabber(batteries.HotKeyGrabberMaker):pass	
+	
+class Gui_Main(gui_maker.GuiMakerWindowMenu):	#controler of page	
 	def start(self):
 		#~ self.style = cfg_guimaker_frame.update({'bg':'yellow','bd':'10'})
 		#~ self.conPack = {'expand':'1','fill':'both', 'side':'top'}
 		self.customForm	= 	[
 			(SettingsNoteBook, '','settings',		cfg_grid,c_label)]			
-	
-	def load_cfg(self):
+		
+	def load_cfg(self, cfg):
 		for tab in self.formRef['settings'].widget_ref.values():		#The notebook tabs
 			for setting, tkvar in tab.variables.items():
-				value = tkvar.get()
-				print(setting,value)
+				#~ print(setting)
+				for cfg_setting, values in cfg.items():
+					if setting == cfg_setting:
+						print(setting, values)
+						tkvar.set(values[0])
+						break
+				else:
+					print('NO MATCH', setting)
+				#~ value = tkvar.get()
+				#~ print(setting,value)
+#~ save_settings([['testing'], ['13']])
 
-			
-class SettingsNoteBook(gui_maker.GuiNoteBook):			#main controller notebook, used to switch the pain on the right of the treeviewer
+class SettingsNoteBook(gui_maker.GuiNoteBook):			# Main controller notebook, used to switch the pain on the right of the treeviewer
 	def start(self):
 		self.widgList = [LaunchSettings,MiscSettings,NetGraph,InternetSettings,MacroSettings,PerformanceSettings,PainFadeSettings]
 		self.tabText = ['Launch','Misc','NetGraph','Internet','Macros','Performance','Damage Delay']
 		#~ self.nbStyle=c_hiddenNotebook	# only woring in main not in running from script
 		self.widgSide = ['nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew']
+
+
+class ProgramSetup(gui_maker.GuiMakerWindowMenu):						
+	def start(self):
+		self.customForm	= 	[
+			((ttk.Checkbutton, 'dota_force_right_click_attack','dota_force_right_click_attack',		cfg_grid,{}),
+			(ttk.Label, 'Deny on right mouse click',None,	cfg_grid,{})),
+		
+			((ttk.Label, 'dota_pain_fade_rate',None,		cfg_grid,{}),
+			(ttk.Entry, '','dota_pain_fade_rate',		cfg_grid,{})),
+			
+			((ttk.Label, 'Reload autoexec.cfg Hotkey',None,		cfg_grid,{}),
+			(HotKeyGrabber, '','reset_hotkey',		cfg_grid,{})),
+			
+			((ttk.Label, 'Turn Text Mode Off Hotkey',None,		cfg_grid,{}),
+			(HotKeyGrabber, '','text_off_hotkey',		cfg_grid,{})),
+			
+			((ttk.Label, 'Unlock Testing Mode Hotkey',None,		cfg_grid,{}),
+			(HotKeyGrabber, '','unlock_testmode_hotkey',		cfg_grid,{}))]
+			
 		
 class LaunchSettings(gui_maker.GuiMakerWindowMenu):
 	def start(self):
@@ -175,25 +203,63 @@ class MiscSettings(gui_maker.GuiMakerWindowMenu):
 class MacroSettings(gui_maker.GuiMakerWindowMenu):
 	def start(self):
 		self.customForm	= 	[
-		((ttk.Label, 'Courier Deliver & Message',None,		cfg_grid,{}),
-		(HotKeyGrabber, '','courier_hotkey',		cfg_grid,{}),
-		(ttk.Entry, 'msg','enter message here',		cfg_grid,{})),
+			((ttk.Label, 'Courier Deliver & Message',None,		cfg_grid,{}),
+			(HotKeyGrabber, '','courier_hotkey',		cfg_grid,{}),
+			(ttk.Entry, 'msg','enter message here',		cfg_grid,{})),
+			
+			((ttk.Label, 'Rune Checker',None,		cfg_grid,{}),
+			(HotKeyGrabber, '','runechecker_hotkey',		cfg_grid,{})),
+			
+			((ttk.Label, 'Netgraph Toggle Hotkey',None,		cfg_grid,{}),
+			(HotKeyGrabber, '','netgraph_hotkey',		cfg_grid,{})),
+			
+			((ttk.Label, 'Netgraph Toggle Hotkey',None,		cfg_grid,{}),
+			(HotKeyGrabber, '','netgraph_hotkey',		cfg_grid,{}))]
+
+class TestingSettings(gui_maker.GuiMakerWindowMenu):
+	def start(self):
+		self.customForm	= 	[
+		((ttk.Label, 'Help text hotkey',None,		cfg_grid,{}),
+		(HotKeyGrabber, '','help_hotkey',		cfg_grid,{}))]
 		
-		((ttk.Label, 'Rune Checker',None,		cfg_grid,{}),
-		(HotKeyGrabber, '','runechecker_hotkey',		cfg_grid,{})),
+class HpSegmentationSettings(gui_maker.GuiMakerWindowMenu):
+	def start(self):
+		self.customForm	= 	[
+			((ttk.Checkbutton, 'dota_force_right_click_attack','dota_force_right_click_attack',		cfg_grid,{}),
+			(ttk.Label, 'Deny on right mouse click',None,	cfg_grid,{})),
+
+			((ttk.Label, 'Hp Line Segment Toggle Hotkey',None,		cfg_grid,{}),
+			(HotKeyGrabber, '','segment_hotkey',		cfg_grid,{})),
+
 		
-		((ttk.Label, 'Netgraph Toggle Hotkey',None,		cfg_grid,{}),
-		(HotKeyGrabber, '','netgraph_hotkey',		cfg_grid,{})),
-		
-		((ttk.Label, 'Netgraph Toggle Hotkey',None,		cfg_grid,{}),
-		(HotKeyGrabber, '','netgraph_hotkey',		cfg_grid,{}))]
+			((ttk.Label, 'dota_pain_fade_rate',None,		cfg_grid,{}),
+			(ttk.Entry, '','dota_pain_fade_rate',		cfg_grid,{}))]
 
 class AboutPage(gui_maker.GuiMakerWindowMenu):
 	def start(self):
-		pass
-class AboutPage(gui_maker.GuiMakerWindowMenu):
+		self.customForm	= 	[
+			((ttk.Checkbutton, 'dota_force_right_click_attack','dota_force_right_click_attack',		cfg_grid,{}),
+			(ttk.Label, 'Deny on right mouse click',None,	cfg_grid,{})),
+		
+			((ttk.Label, 'dota_pain_fade_rate',None,		cfg_grid,{}),
+			(ttk.Entry, '','dota_pain_fade_rate',		cfg_grid,{})),
+			
+			((ttk.Label, 'Netgraph Toggle Hotkey',None,		cfg_grid,{}),
+			(HotKeyGrabber, '','netgraph_hotkey',		cfg_grid,{}))]
+
+class ProgramSetup(gui_maker.GuiMakerWindowMenu):
 	def start(self):
-		pass
+		self.customForm	= 	[
+			((ttk.Checkbutton, 'dota_force_right_click_attack','dota_force_right_click_attack',		cfg_grid,{}),
+			(ttk.Label, 'Deny on right mouse click',None,	cfg_grid,{})),
+		
+			((ttk.Label, 'dota_pain_fade_rate',None,		cfg_grid,{}),
+			(ttk.Entry, '','dota_pain_fade_rate',		cfg_grid,{})),
+			
+			((ttk.Label, 'Netgraph Toggle Hotkey',None,		cfg_grid,{}),
+			(HotKeyGrabber, '','netgraph_hotkey',		cfg_grid,{}))]
+
+
 
 if __name__ == '__main__': 
 
