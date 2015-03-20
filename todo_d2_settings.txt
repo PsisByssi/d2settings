@@ -1,0 +1,13 @@
+d2_func.save_settings should yield, i loop once over all the changed elements, if that order is sequential than i
+can just yield instead of having to search the entire
+
+Testing normal settings for edits - seems good, could also add or remove tabs if the changes are greater or less than 4 charsI
+Testing Ignoring - seems good, can edit when ignored or unignored
+
+Testing - saving hotekys and binds- basic one all good - need to do muting and when no hotkey is saves
+Testing - hotkeygrabber - seems good!
+Testing - hp toggle	- on adding new have to create the text load block that is getting pointed to
+Tesint - Testing mode, spawn creatures etc 
+Testing - autohotkey binds
+
+Fix after grabber reset should be able to press hte previously pressed key...
