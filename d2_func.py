@@ -1,6 +1,7 @@
 from pprint import pprint
 import csv
 import time
+import glob
 
 from timstools import InMemoryWriter
 from timstools import ignored
@@ -66,20 +67,22 @@ def read_ahk_file():
 		ahk_commands = ((i,j, row, col) for i, row in enumerate(reader) if row and row[0] and row[0][0] !=';'
 							for j, col in enumerate(row) if col[-2:] == '::')
 		for i,j, row, col in ahk_commands:
-			#~ print(col)
 			try:
 				if row[j+1] == 'send':			# we only care about non multiline binds so	
-					dota_hotkey = row[j+2]
-					dota_hotkey = dota_hotkey.replace('{','')	# this annotation stop ahk from sending the key as a char to windows
-					dota_hotkey = dota_hotkey.replace('}','')
+					dota_hotkey = row[j+2][1:]
+					dota_hotkey = dota_hotkey.split('}')[0]
 					ahk_hotkey = row[:j+1]
 					ahk_hotkey[-1] = ahk_hotkey[-1][:-2] # remove the :: syntax from the end
 					with ignored(IndexError):
 						if '&' == ahk_hotkey[1]:
 							del ahk_hotkey[1]
-					#~ print(dota_hot_key,j)	
-					#~ print(ahk_hot_key,j)	
-					ahk_bind_settings[dota_hotkey] = ahk_hotkey
+					for key, value in ahk_key_list.items():
+						if dota_hotkey == value:
+							valverised = valve_key_list[key]
+							break
+						else:
+							valverised = dota_hotkey	
+					ahk_bind_settings[valverised] = ahk_hotkey
 			except IndexError:pass	
 				
 				#~ if col == 'send':				# Identify the hotkeys			
@@ -102,11 +105,8 @@ def read_ahk_file():
 	
 def load_exec_into_memory():
 	# All Lines are loaded into memory and wrote to file after all edits are made
-	exec_file = InMemoryWriter()
-	with open('autoexec.cfg', 'r') as file: 
-		exec_file.writelines(file)			  # about 18k in memory ^^
-	return exec_file
-
+	return InMemoryWriter('autoexec.cfg')
+	
 def save_settings(exec_file, selected_setting, value):
 	IGNORE = False
 	def quotes_on_strings(value):	
@@ -177,22 +177,28 @@ def save_hptoggle(app, widget):
 	for hero in lb.get(0, 'end'):
 		if hero not in lb.master.options:		# Adding New Hero
 			#~ print('adding new hero!', hero)
-			for i, row in enumerate(app.auto_exec.data[index:index+10]):	
+			for i, row in enumerate(app.auto_exec[index:index+10]):	
+			#~ for i, row in enumerate(app.auto_exec.data[index:index+10]):	
 				if 'hp' not in row:			
-					prev_row = app.auto_exec.data[index+i-1]		# Modify previous row
+					#~ prev_row = app.auto_exec.data[index+i-1]		# Modify previous row
+					prev_row = app.auto_exec[index+i-1]		# Modify previous row
 					rest_of_row = prev_row[: -len(prev_row.split(' ')[-1])]
 					num = int(only_numerics(prev_row.split(' ')[1]))
 					new_end = '"hp{0}"'.format(num+1)
 					new_prev_row = '{0}{1}\n'.format(rest_of_row, new_end)
-					del app.auto_exec.data[index+i]
-					app.auto_exec.data[index+i-1] = new_prev_row	# Create new row
+					#~ del app.auto_exec.data[index+i]
+					#~ app.auto_exec.data[index+i-1] = new_prev_row	# Create new row
+					del app.auto_exec[index+i]
+					app.auto_exec[index+i-1] = new_prev_row	# Create new row
 					new_row = 'alias "hp{0}" "clear;numkeysclear;exec {1}_hp.cfg;alias textecho {0}toload;output_text_to_screen; alias hptoggle hp1"\n\n'.format(num+1 , hero)	# Create new row
-					app.auto_exec.data[index+i] = new_row
+					#~ app.auto_exec.data[index+i] = new_row
+					app.auto_exec[index+i] = new_row
 					break
 	for orig_hero in lb.master.options:
 		if orig_hero not in lb.get(0, 'end'):	# Removing a hero
 			#~ print('remove', orig_hero)
-			for i, row in enumerate(app.auto_exec.data[index:index+6]):		# Identify row to remove
+			#~ for i, row in enumerate(app.auto_exec.data[index:index+6]):		# Identify row to remove
+			for i, row in enumerate(app.auto_exec[index:index+6]):		# Identify row to remove
 				if not row:pass
 				split_row = row.split(' ')
 				hero_name = split_row[3].split('_hp.cfg')[0]
@@ -200,9 +206,11 @@ def save_hptoggle(app, widget):
 					next_alias_name = split_row[-1]
 					hero_row_index = index+i
 					#~ print('removing row',app.auto_exec.data[hero_row_index])
-					del app.auto_exec.data[hero_row_index]					# Remove Row
+					#~ del app.auto_exec.data[hero_row_index]					# Remove Row
+					del app.auto_exec[hero_row_index]					# Remove Row
 					break
-			prev_row = app.auto_exec.data[hero_row_index-1]					# Modifiy Prev row
+			#~ prev_row = app.auto_exec.data[hero_row_index-1]					# Modifiy Prev row
+			prev_row = app.auto_exec[hero_row_index-1]					# Modifiy Prev row
 			prev_num = int(only_numerics(prev_row.split(' ')[-1]))
 			next_num = int(only_numerics(next_alias_name))
 			if prev_num > next_num:  					# The Entry deleted was the last hptoggle
@@ -210,12 +218,16 @@ def save_hptoggle(app, widget):
 				#~ print('rest of row', rest_of_row)	
 				new_row = '{0}{1}'.format(rest_of_row, next_alias_name)
 				#~ print('new row',new_row)
-				del app.auto_exec.data[hero_row_index-1]
-				app.auto_exec.data[hero_row_index-1] = new_row
+				#~ del app.auto_exec.data[hero_row_index-1]
+				#~ app.auto_exec.data[hero_row_index-1] = new_row
+				del app.auto_exec[hero_row_index-1]
+				app.auto_exec[hero_row_index-1] = new_row
 			else:										# Reasign all the ones that come after
-				for i, row in enumerate(app.auto_exec.data[hero_row_index:hero_row_index+10]):
+				#~ for i, row in enumerate(app.auto_exec.data[hero_row_index:hero_row_index+10]):
+				for i, row in enumerate(app.auto_exec[hero_row_index:hero_row_index+10]):
 					end = int(only_numerics(row.split(' ')[-1]))
-					prev_row = app.auto_exec.data[hero_row_index+i-1]
+					#~ prev_row = app.auto_exec.data[hero_row_index+i-1]
+					prev_row = app.auto_exec[hero_row_index+i-1]
 					try:
 						prev_row_start = int(only_numerics(prev_row.split(' ')[1]))
 					except ValueError:			# the first row
@@ -231,21 +243,39 @@ def save_hptoggle(app, widget):
 					new_row = 'alias {0}{1}{2}\n'.format(new_start, rest_of_row, new_end)
 					#~ print('new row', new_row) # NOW DO WHEN THEY DELTE THE FIRST ONE!
 					#~ print('old',row)
-					app.auto_exec.data[hero_row_index+i] = new_row
+					#~ app.auto_exec.data[hero_row_index+i] = new_row
+					app.auto_exec[hero_row_index+i] = new_row
 					if prev_row_end > end:				# Reached the last row i.e leave it pointing to the first hp toggle
 						break
 	lb.master.options = lb.get(0, 'end')
 
 def load_keys_hptoggle(self):
 	# Loads the key binds from hp100_hp.cfg, the other hp.cfg files all use the same
+	keys = []
 	with open('hp/hp100_hp.cfg') as hp:
-		keys = []
 		for row in hp:
 			if row:
 				keys.append(row.split(' ')[1])
 		for i, value in zip(range(1,11), keys):
+			value = value[1:-1]	
 			self.formRef['hpkey'+str(i)].set(value)
-
+			
+def save_hp_keys(setting, value):
+	key_num = int(only_numerics(setting))
+	print('key_num', key_num)
+	for file in glob.glob('hp/*_hp.cfg'):
+		i = 1
+		file_writer = InMemoryWriter(file, verbose=True)
+		for line in file_writer(copy=True):
+			if line.rstrip():
+				if i == key_num:
+					old_value = line.split(' ')[1][1:-1]
+					new_line = line.replace(old_value, value[0])
+					file_writer[file_writer.i-1] = new_line
+					break
+				i += 1
+		file_writer.save()
+		
 valve_key_list = {'Tab': 'tab', 
 			'Return': 'enter', 
 			'Escape': 'escape', 
@@ -311,7 +341,6 @@ def valve_key_parser(passed_key):
 		else:
 			return passed_key
 
-
 ahk_key_list = {
 			#~ 'Tab': 'tab', 
 			#~ 'Return': 'enter', 
@@ -365,7 +394,6 @@ ahk_key_list = {
 			'Scroll_Lock': 'ScrollLock',
 			'Caps_Lock': 'CapsLock'
 				}
-
 
 if __name__ == '__main__':
 	import tttimer

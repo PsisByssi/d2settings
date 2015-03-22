@@ -18,12 +18,14 @@ class BindKeyGrabber(batteries.HotKeyGrabber):
 		self.reset_on_click = False
 		self.reset_on_focus = False
 		self.custom_input = d2_func.valve_key_list
-	
+		self.conf = {'width':15}
+		self.max_keys = 1
 class AhkGrabber(batteries.HotKeyGrabber):
 	def start(self):
 		self.reset_on_click = False
 		self.reset_on_focus = False
 		self.custom_input = d2_func.ahk_key_list
+		
 		#~ def set(self, hotkeyvalues):
 		#~ formatted = []
 		#~ for key in hotkeyvalues:
@@ -84,9 +86,7 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 			(SettingsNoteBook, '','settings',		cfg_grid,c_label)]			
 		self.toolBar = [(('save', self.save_cfg,  {'side': tk.RIGHT},c_button),
 						('reset', self.reload_cfg, {'side': tk.RIGHT},c_button))]
-	
 	def finish(self):
-		# Runs after everything else, see maker
 		def change_normal(event):
 			event.widget.changed = True
 		def change_class(event):
@@ -102,7 +102,18 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 					widget.listbox.bind('<Button-1>', change_class, add='+')
 				else:
 					widget.bind('<Key>', change_normal, add='+')	
-	
+		self.app.root.bind('<F1>', self.help_me)
+	def help_me(self, event):
+		if isinstance(event.widget, ttk.Notebook):
+			widget = event.widget
+		else:
+			widget = event.widget 
+			while 1:
+				widget = widget.master
+				if isinstance(widget, ttk.Notebook):
+					break
+		print(repr(widget))
+		tab = widget.select()
 	def load_cfg(self, cfg, bind_cfg, ahk_cfg):
 		def set_default_value(set_checkbox_on=False,ignore_mode=False):	# Func to set defaults!
 			with ignored(KeyError):			# If there is no default value whateva
@@ -130,7 +141,7 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 				else:
 					text = cfg_values[index]
 					widg = tab.formRef[setting]
-					tooltip.ToolTip(widg, delay=200,text=text)
+					tooltip.ToolTip(widg, delay=200, text=text)
 		for tab in self.formRef['settings'].widget_ref.values():		#The notebook tabs
 			for setting, tkvar in tab.variables.items():
 				for cfg_setting, cfg_values in cfg.items():
@@ -177,41 +188,52 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 						pass
 			for setting, widg in tab.formRef.items():						# Handle the bind settings from the autoexec
 				for bind_setting, bind_values in bind_cfg.items():              
-					#~ print('calling set')
+					#~ print('calling set', )
 					bind_value = bind_setting	 
 					if setting in bind_values:						# Atm i'm allowing myself to place the tag anywhere in the values
 						widg.set([bind_value])							# Set method on the Hotkeygrabber
-						break			
-				for ahk_bind_setting, ahk_bind_value in ahk_cfg.items():
-					pass
+						try:
+							ahk_value = ahk_cfg[bind_value.lower()]
+							tab.formRef[setting+'_remap'].set(ahk_value)
+						except KeyError:
+							pass
+						break
+					#~ elif setting+'_remap' in bind_values:		
+				#~ print('Ahk')
+				#~ pprint(ahk_cfg)
+				#~ for ahk_bind_setting, ahk_bind_value in ahk_cfg.items():
+					#~ if a
 
 	def reload_cfg(self):
 		pass
 	def save_cfg(self):
 		# Only gets the values and rates the widgets that have been changed
-		hp_saved = False												# To prevent listbox being saved twice
 		for tab in self.formRef['settings'].widget_ref.values():		# The notebook tabs
 			for setting, widget in tab.formRef.items():	
 				if hasattr(widget, 'changed') and widget.changed:		 	
 					print('changed',repr(widget))
+					widget.changed = False
 					try:
 						value = widget.get()
 					except AttributeError:
-						if isinstance(widget, batteries.HotKeyGrabber):
-							value = widget.var.get()					
-						elif isinstance(widget, ttk.Checkbutton):			
+						#~ if isinstance(widget, batteries.HotKeyGrabber):
+							#~ print('in ho9tkey grabber')
+							#~ print(repr(widget.caller))
+							#~ value = widget.var.get()					
+						if isinstance(widget, ttk.Checkbutton):			
 							tkvar = tab.variables[setting]
 							value = tkvar.get()
 						elif isinstance(widget, maker.MakerScrolledList):	
-							if not hp_saved:
-								hp_saved = True
-								d2_func.save_hptoggle(self.app, widget)
+							d2_func.save_hptoggle(self.app, widget)
 							continue
-					d2_func.save_settings(self.app.auto_exec, setting, value)	# Edits the in memory file		
-		
-		with open('autoexec_saved.cfg', 'w') as file:
-			for row in self.app.auto_exec:
-				file.write(row)
+					if 'hpkey' in setting:
+						d2_func.save_hp_keys(setting, value)
+					else:
+						d2_func.save_settings(self.app.auto_exec, setting, value)	# Edits the in memory file		
+		#~ with open('autoexec_saved.cfg', 'w') as file:
+			#~ for row in self.app.auto_exec:
+				#~ file.write(row)
+		self.app.auto_exec.save('autoexec_saved.cfg')
 		print('Finished saving')
 
 class SettingsNoteBook(maker.GuiNoteBook):			# Main controller notebook, used to switch the pain on the right of the treeviewer
@@ -219,11 +241,11 @@ class SettingsNoteBook(maker.GuiNoteBook):			# Main controller notebook, used to
 		self.style = {'bg':'#232327','bd':5,'relief':'flat'}
 		#~ self.conPack = {'expand':'1','fill':'both', 'side':'top'}
 		#~ self.config(padx=40,pady=40)		
-		self.widgList = [ProgramSetup,MiscSettings,NetGraph,InternetSettings,MacroSettings,PerformanceSettings,PainFadeSettings,StandardMenu,HpSegment]
-		self.tabText = ['Launch','Misc','NetGraph','Internet','Macros','Performance','Damage Delay', 'Standard Options','Hp Segment']
+		self.widgList = [ProgramSetup,MiscSettings,NetGraph,InternetSettings,MacroSettings,PerformanceSettings,PainFadeSettings,StandardMenu,HpSegment,TestMode]
+		self.tabText = ['Launch','Misc','NetGraph','Internet','Macros','Performance','Damage Delay', 'Standard Options','Hp Segment','Test Scripts']
 		#~ self.nbStyle=c_hiddenNotebook	# only woring in main not in running from script
-		self.widgSide = ['nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew']
-		self.padding=[10, 10, 10, 10, 10, 10, 10, 10,10]
+		self.widgSide = ['nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew']
+		self.padding=[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
 
 class ProgramSetup(maker.GuiMakerWindowMenu):						
 	def start(self):
@@ -618,10 +640,11 @@ class HpSegment(maker.GuiMakerWindowMenu):
 	class SelectedHeroes(maker.MakerScrolledList):
 		def start(self):
 			self.use_default_event_handler = True
-			self.options=[]
+			self.options = []
 			index = self.app.cfg_settings['hptoggle'] + 5	#need to fix csv so it counts blank lines
 			#~ print('len! of exec data', len(self.app.auto_exec.data))
-			for i, row in enumerate(self.app.auto_exec.data[index:]):	
+			#~ for i, row in enumerate(self.app.auto_exec.data[index:]):	
+			for i, row in enumerate(self.app.auto_exec[index:]):	
 				if not row:pass
 				elif 'hp' in row:
 					row = row.split(' ')
@@ -630,8 +653,6 @@ class HpSegment(maker.GuiMakerWindowMenu):
 						self.options.append(hero_name)
 				else:
 					break
-			#~ for file in glob.glob('hp/*_hp.cfg'):
-				#~ self.options.append(file)
 		def run_command(self, selection):
 			self.listbox.delete(self.listbox.curselection()[0])
 		def finish(self):
@@ -700,7 +721,43 @@ class HpSegment(maker.GuiMakerWindowMenu):
 		add_headings(self.customForm)
 		add_remap_field(self.customForm)
 	def finish(self):
+		tooltip_text = ['Lvl 6',
+						'Lvl 11',
+						'Lvl 16', 
+						'Aghanim\'s Scepter Lvl 6',
+						'Aghanim\'s Scepter Lvl 11',
+						'Aghanim\'s Scepter Lvl 16',
+						'Aghs Lvl 6 without magic resistance',
+						'Aghs Lvl 11 without magic resistance',
+						'Aghs Lvl 16 without magic resistance',
+						'Used in Hp100 for 1000'
+						]
 		d2_func.load_keys_hptoggle(self)
+		for i, text in zip(range(1,11), tooltip_text):	
+			widg = self.formRef['hpkey'+str(i)]
+			tooltip.ToolTip(widg, delay=200, text=text)
+
+class TestMode(maker.GuiMakerWindowMenu):
+	def start(self):
+		self.customForm	= 	[
+			((ttk.Label, 'Enable/Disable Test key',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','testing_lock_hotkey',		cfg_grid,{})),
+			
+			((ttk.Label, 'Test Key',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','here',		cfg_grid,{})),
+			
+			((ttk.Checkbutton, '','',		cfg_grid,{}),
+			(ttk.Label, '',None,	cfg_grid,{})),
+		
+			((ttk.Label, '',None,		cfg_grid,{}),
+			(ttk.Entry, '','here',		cfg_grid,{})),
+			
+			((ttk.Label, '',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','here',		cfg_grid,{}))]
+		add_default_field(self.customForm)
+		add_headings(self.customForm)
+		add_remap_field(self.customForm)
+
 class AboutPage(maker.GuiMakerWindowMenu):
 	def start(self):
 		self.customForm	= 	[

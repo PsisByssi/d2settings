@@ -7,7 +7,25 @@ Testing Ignoring - seems good, can edit when ignored or unignored
 Testing - saving hotekys and binds- basic one all good - need to do muting and when no hotkey is saves
 Testing - hotkeygrabber - seems good!
 Testing - hp toggle	- on adding new have to create the text load block that is getting pointed to
-Tesint - Testing mode, spawn creatures etc 
 Testing - autohotkey binds
 
-Fix after grabber reset should be able to press hte previously pressed key...
+
+Hot key grabber picks up numkeys as CAPS ninstea of lowercase, see if its a problem for valve or not
+
+
+
+
+
+
+Tesint - Testing mode, spawn creatures etc 
+
+delete script
+edit script
+create new script
+
+heroes,
+settings
+items
+
+
+key, script 
