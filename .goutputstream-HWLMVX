@@ -19,8 +19,8 @@ ALT & `:: send {end}					; Clears text from help menu etc
 
 LCtrl & LAlt:: send {f3}	; Toggles between rune and hero
 
-LCtrl & LAlt & g:: send {PgDn} 
-;ctrl & g :: send {PgDn} 
+;LCtrl & LAlt & g :: send {Pgdn} 
+ctrl & g :: send {Pgdn} 
 
 ;------------------- Courier ----------------------
 

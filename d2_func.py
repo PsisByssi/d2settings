@@ -81,7 +81,7 @@ def read_ahk_file():
 							valverised = valve_key_list[key]
 							break
 						else:
-							valverised = dota_hotkey	
+							valverised = dota_hotkey		
 					ahk_bind_settings[valverised] = ahk_hotkey
 			except IndexError:pass	
 				
@@ -123,7 +123,6 @@ def save_settings(exec_file, selected_setting, value):
 	else:
 		print('Couldnt find the setting in the file... make sure its in theree')
 		return
-	
 	split_row = row.split(' ')	
 	if IGNORE == True:						# User is muting or unmuting a row
 		print('muting or unmuting')
@@ -132,7 +131,8 @@ def save_settings(exec_file, selected_setting, value):
 				new_row = row[len('//IGNORE '):]
 				print('OLD_ROW: ',repr(row))
 				print('NEW_ROW: ',repr(new_row))	
-				exec_file.data[i] = new_row
+				#~ exec_file.data[i] = new_row
+				exec_file[i] = new_row
 		else:
 			if value == 1:
 				new_row = '//IGNORE '+row
@@ -144,10 +144,10 @@ def save_settings(exec_file, selected_setting, value):
 		old_value = split_row[1].split('\t')[0]
 		rest_of_row = row[len(selected_setting + old_value)+1:]	
 		new_row = '{0} {1}{2}'.format(selected_setting, value, rest_of_row)
-		#~ print('split0',split_row[0],'VALUE',value,'REST',repr(rest_of_row))
 		print('OLD_ROW: ',repr(row))
 		print('NEW_ROW: ',repr(new_row))
-		exec_file.data[i] = new_row
+		#~ exec_file.data[i] = new_row
+		exec_file[i] = new_row
 	elif split_row[0] == 'bind':
 		try:
 			value = quotes_on_strings(value[0]) 
@@ -159,7 +159,8 @@ def save_settings(exec_file, selected_setting, value):
 		#~ print('split0',split_row[0],'VALUE',value,'REST',repr(rest_of_row))
 		print('OLD_ROW: ',repr(row))
 		print('NEW_ROW: ',repr(new_row))
-		exec_file.data[i] = new_row
+		#~ exec_file.data[i] = new_row
+		exec_file[i] = new_row
 	else:									# user has modified a row that is already muted
 		print('modified a row that is already muted !')
 		value = quotes_on_strings(value)		
@@ -169,7 +170,8 @@ def save_settings(exec_file, selected_setting, value):
 		#~ print('split0',split_row[0],'VALUE',value,'REST',repr(rest_of_row))
 		print('OLD_ROW: ',repr(row))
 		print('NEW_ROW: ',repr(new_row))
-		exec_file.data[i] = new_row
+		#~ exec_file.data[i] = new_row
+		exec_file[i] = new_row
 
 def save_hptoggle(app, widget):
 	lb = widget.caller.formRef['selectedheroeslistbox'].listbox
@@ -275,7 +277,60 @@ def save_hp_keys(setting, value):
 					break
 				i += 1
 		file_writer.save()
-		
+
+def save_ahk(gui_main, ahk_file, tab, ahk_grabber, setting, value):		
+	print()
+	print('save AHK', setting,value)
+	bind_grabber = tab.formRef[setting.split('_remap')[0]]
+	line1 = []
+	for hk_index, row in enumerate(ahk_file):
+		if 'Hot Keys' in row:
+			break
+	for hk_end, row in enumerate(ahk_file[hk_index+1:]):
+		if ';----' in row:
+			break
+	try:									# modify
+		for hot_key in ahk_grabber.original_value:
+			line1.append(hot_key)
+		#~ line1 = '{0}::'.format(ahk_grabber.original_value)
+		print('astr ', line1)
+		for i, row in enumerate(ahk_file[hk_index:hk_end]):
+			#~ print(row)
+			if line1 in row:
+				print(line1)
+				print('FOUND ROW!!!', row)
+	except AttributeError:					# create new ahk mapping that didn't exist before
+		for hot_key in ahk_grabber.get():
+			tk_form = ahk_grabber.key_parser(hot_key)
+			line1.append(ahk_grabber.key_parser(tk_form, ahk_key_list))
+			line1.append('&')
+		line1[-1] = '::'			
+		line1.append('send')
+		try:
+			to_send = bind_grabber.key_parser(bind_grabber.get()[0])
+		except TypeError:					# None Type, cannot create remap key as no key to map to
+			return
+		line1.append('{{{0}}}'.format(ahk_grabber.key_parser(to_send, ahk_key_list)))
+		print('from ahk_keylist,', line1[-1])
+		with ignored(AttributeError):		# get comment text from tooltip
+			text = ahk_grabber.tooltip_text
+		with ignored(AttributeError):
+			text = bind_grabber.tooltip_text
+		with ignored(AttributeError):
+			entry_widget = setting.split('_hotkey')[0]
+			for tab in gui_main.formRef['settings'].widget_ref.values():		#The notebook tabs TBD COMMENTS
+				for setting, widget in tab.formRef.items():
+					if setting == entry_widget:
+						text = widget.tooltip_text
+		try:
+			comment = '\t\t\t;{0}\n'.format(text)
+			line1.append(comment)
+		except UnboundLocalError:
+			line1.append('\n\n')
+		line1 = ' '.join(line1)
+		ahk_file.insert(hk_index + hk_end +1, line1)
+	print()
+	#~ ahk_file.save()
 valve_key_list = {'Tab': 'tab', 
 			'Return': 'enter', 
 			'Escape': 'escape', 
@@ -326,20 +381,6 @@ valve_key_list = {'Tab': 'tab',
 			'tbd': 'mouse4', 
 			'tbd': 'mouse5', 
 			'Pause': 'pause'}
-
-def valve_key_parser(passed_key):
-	try:
-		valve_key = valve_key_list[passed_key]
-		return valve_key
-	except KeyError:
-		#~ print('e')
-		for key, value in key_list.items():
-			#~ print('e')
-			if passed_key == value:
-				#~ print('retu', value)
-				return key			# going from valve key to a tkinter key
-		else:
-			return passed_key
 
 ahk_key_list = {
 			#~ 'Tab': 'tab', 

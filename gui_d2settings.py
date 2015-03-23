@@ -8,6 +8,7 @@ from tkquick.gui.style_defaults import *
 from tkquick.gui import batteries
 from tkquick.gui import tooltip
 from timstools import ignored
+from timstools import InMemoryWriter
 
 import d2_func
 
@@ -18,19 +19,13 @@ class BindKeyGrabber(batteries.HotKeyGrabber):
 		self.reset_on_click = False
 		self.reset_on_focus = False
 		self.custom_input = d2_func.valve_key_list
-		self.conf = {'width':15}
 		self.max_keys = 1
+		self.conf = {'width':15}
 class AhkGrabber(batteries.HotKeyGrabber):
 	def start(self):
 		self.reset_on_click = False
 		self.reset_on_focus = False
-		self.custom_input = d2_func.ahk_key_list
-		
-		#~ def set(self, hotkeyvalues):
-		#~ formatted = []
-		#~ for key in hotkeyvalues:
-			#~ formatted.append(d2_func.valve_key_parser(key))	
-		#~ batteries.BindKeyGrabberMaker.set(self,formatted)		#call original func
+		self.custom_input = d2_func.valve_key_list
 
 def add_default_field(customForm):
 	# Instead of manually adding the rows to custom form builder.
@@ -103,6 +98,7 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 				else:
 					widget.bind('<Key>', change_normal, add='+')	
 		self.app.root.bind('<F1>', self.help_me)
+	
 	def help_me(self, event):
 		if isinstance(event.widget, ttk.Notebook):
 			widget = event.widget
@@ -114,6 +110,7 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 					break
 		print(repr(widget))
 		tab = widget.select()
+		
 	def load_cfg(self, cfg, bind_cfg, ahk_cfg):
 		def set_default_value(set_checkbox_on=False,ignore_mode=False):	# Func to set defaults!
 			with ignored(KeyError):			# If there is no default value whateva
@@ -142,6 +139,7 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 					text = cfg_values[index]
 					widg = tab.formRef[setting]
 					tooltip.ToolTip(widg, delay=200, text=text)
+					widg.tooltip_text = text
 		for tab in self.formRef['settings'].widget_ref.values():		#The notebook tabs
 			for setting, tkvar in tab.variables.items():
 				for cfg_setting, cfg_values in cfg.items():
@@ -190,11 +188,15 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 				for bind_setting, bind_values in bind_cfg.items():              
 					#~ print('calling set', )
 					bind_value = bind_setting	 
-					if setting in bind_values:						# Atm i'm allowing myself to place the tag anywhere in the values
-						widg.set([bind_value])							# Set method on the Hotkeygrabber
+					if setting in bind_values:						# Atm i'm allowing myself to place the tag anywhere in the values 
+						widg.original_value = bind_value
+						widg.set(bind_value)							# Set method on the Hotkeygrabber
 						try:
 							ahk_value = ahk_cfg[bind_value.lower()]
-							tab.formRef[setting+'_remap'].set(ahk_value)
+							ahk_widg = tab.formRef[setting+'_remap']
+							ahk_widg.original_value = ahk_value
+							print('ORIGINAL VALUE AHK', ahk_widg.original_value )
+							ahk_widg.set(ahk_value)
 						except KeyError:
 							pass
 						break
@@ -228,11 +230,14 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 							continue
 					if 'hpkey' in setting:
 						d2_func.save_hp_keys(setting, value)
+					elif '_remap' in setting:
+						if not hasattr(self.app, 'ahk_file'):
+							self.app.ahk_file = InMemoryWriter('dota_binds.ahk')
+						d2_func.save_ahk(self, self.app.ahk_file, tab, widget, setting, value)
+
 					else:
 						d2_func.save_settings(self.app.auto_exec, setting, value)	# Edits the in memory file		
-		#~ with open('autoexec_saved.cfg', 'w') as file:
-			#~ for row in self.app.auto_exec:
-				#~ file.write(row)
+
 		self.app.auto_exec.save('autoexec_saved.cfg')
 		print('Finished saving')
 
@@ -681,41 +686,41 @@ class HpSegment(maker.GuiMakerWindowMenu):
 				(ttk.Button, ['right.png'], '', cfg_grid, {})]
 	def start(self):
 		self.customForm	= 	[
-			((ttk.Label, 'hptoggle_hotkey','',		cfg_grid,{}),
-			(BindKeyGrabber, '','Hero Specific bind toggle Toggle',	cfg_grid,{})),
+			((ttk.Label, 'Toggle Hero','',		cfg_grid,{}),
+			(BindKeyGrabber, '','hptoggle_hotkey',	cfg_grid,{})),
 			
 			((self.SelectedHeroes, '','selectedheroeslistbox',	cfg_grid,{}),
 			(self.AddRemove,'','',cfg_grid,{}),
 			(self.AllHeroes, '','allheroeslistbox',	cfg_grid,{})),
 			
-			((ttk.Label, '1st Toggle','',	cfg_grid,{}),
+			((ttk.Label, '1st','',	cfg_grid,{}),
 			(BindKeyGrabber,'','hpkey1',		cfg_grid,{})),
 			
-			((ttk.Label, '2nd Toggle','',	cfg_grid,{}),
+			((ttk.Label, '2nd','',	cfg_grid,{}),
 			(BindKeyGrabber,'','hpkey2',		cfg_grid,{})),
 			
-			((ttk.Label, '3rd Toggle','',	cfg_grid,{}),
+			((ttk.Label, '3rd','',	cfg_grid,{}),
 			(BindKeyGrabber,'','hpkey3',		cfg_grid,{})),
 			
-			((ttk.Label, '4th Toggle','',	cfg_grid,{}),
+			((ttk.Label, '4th','',	cfg_grid,{}),
 			(BindKeyGrabber,'','hpkey4',		cfg_grid,{})),
 			
-			((ttk.Label, '5th Toggle','',	cfg_grid,{}),
+			((ttk.Label, '5th','',	cfg_grid,{}),
 			(BindKeyGrabber,'','hpkey5',		cfg_grid,{})),
 			
-			((ttk.Label, '6th Toggle','',	cfg_grid,{}),
+			((ttk.Label, '6th','',	cfg_grid,{}),
 			(BindKeyGrabber,'','hpkey6',		cfg_grid,{})),
 			
-			((ttk.Label, '7th Toggle','',	cfg_grid,{}),
+			((ttk.Label, '7th','',	cfg_grid,{}),
 			(BindKeyGrabber,'','hpkey7',		cfg_grid,{})),
 			
-			((ttk.Label, '8th Toggle','',	cfg_grid,{}),
+			((ttk.Label, '8th','',	cfg_grid,{}),
 			(BindKeyGrabber,'','hpkey8',		cfg_grid,{})),
 			
-			((ttk.Label, '9th Toggle','',	cfg_grid,{}),
+			((ttk.Label, '9th','',	cfg_grid,{}),
 			(BindKeyGrabber,'','hpkey9',		cfg_grid,{})),
 			
-			((ttk.Label, '10th Toggle','',	cfg_grid,{}),
+			((ttk.Label, '10th','',	cfg_grid,{}),
 			(BindKeyGrabber,'','hpkey10',		cfg_grid,{}))]
 		add_default_field(self.customForm)
 		add_headings(self.customForm)
