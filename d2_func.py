@@ -282,7 +282,8 @@ def save_ahk(gui_main, ahk_file, tab, ahk_grabber, setting, value):
 	print()
 	print('save AHK', setting,value)
 	bind_grabber = tab.formRef[setting.split('_remap')[0]]
-	line1 = []
+	start = []
+	end = []
 	for hk_index, row in enumerate(ahk_file):
 		if 'Hot Keys' in row:
 			break
@@ -291,27 +292,43 @@ def save_ahk(gui_main, ahk_file, tab, ahk_grabber, setting, value):
 			break
 	try:									# modify
 		for hot_key in ahk_grabber.original_value:
-			line1.append(hot_key)
-		#~ line1 = '{0}::'.format(ahk_grabber.original_value)
-		print('astr ', line1)
+			start.append(hot_key)
+		#~ start = '{0}::'.format(ahk_grabber.original_value)
+		print('astr ', start)
 		for i, row in enumerate(ahk_file[hk_index:hk_end]):
 			#~ print(row)
-			if line1 in row:
-				print(line1)
+			if start in row:
+				print(start)
 				print('FOUND ROW!!!', row)
 	except AttributeError:					# create new ahk mapping that didn't exist before
-		for hot_key in ahk_grabber.get():
-			tk_form = ahk_grabber.key_parser(hot_key)
-			line1.append(ahk_grabber.key_parser(tk_form, ahk_key_list))
-			line1.append('&')
-		line1[-1] = '::'			
-		line1.append('send')
+		hotkeys_list = ahk_grabber.get()
+		if len(hotkey_list) == 1:
+			start = hotkeys_list[0]
+		elif len(hotkey_list) == 2 and hotkey_list[1] in ahk_grabber.tk_modifiers:	# this enables bindings of just two modifyers, you could also do combinations of keys but thats awkward and takes more work to get the keys to still work as normal keys so cbf
+			tk_form = ahk_grabber.key_parser(hotkey_list[0])
+			start.append(ahk_grabber.key_parser(tk_form, ahk_key_list))
+			start.append('&')
+			tk_form2 = ahk_grabber.key_parser(hotkey_list[1])
+			start.append(ahk_grabber.key_parser(tk_form2, ahk_key_list))	
+		else:
+			hot_key = []																# the hotkey cannot contain spaces in this form
+			for part in hotkey_list:
+				tk_form = ahk_grabber.key_parser(part)
+				if tk_form in ahk_grabber.tk_modifiers:
+					symbol_form = ahk_symbols[tk_form]
+					_key.append(symbol_form)
+				_key.append(tk_form)
+				hot_key = ''.join(part for part in hot_key)
+				start.append(hot_key)
+		start.append('::')			
+		start.append('send')
+		start = ' '.join(start)
 		try:
 			to_send = bind_grabber.key_parser(bind_grabber.get()[0])
 		except TypeError:					# None Type, cannot create remap key as no key to map to
 			return
-		line1.append('{{{0}}}'.format(ahk_grabber.key_parser(to_send, ahk_key_list)))
-		print('from ahk_keylist,', line1[-1])
+		end.append('{{{0}}}'.format(ahk_grabber.key_parser(to_send, ahk_key_list)))
+		print('from ahk_keylist,', start[-1])
 		with ignored(AttributeError):		# get comment text from tooltip
 			text = ahk_grabber.tooltip_text
 		with ignored(AttributeError):
@@ -324,11 +341,11 @@ def save_ahk(gui_main, ahk_file, tab, ahk_grabber, setting, value):
 						text = widget.tooltip_text
 		try:
 			comment = '\t\t\t;{0}\n'.format(text)
-			line1.append(comment)
+			end.append(comment)
 		except UnboundLocalError:
-			line1.append('\n\n')
-		line1 = ' '.join(line1)
-		ahk_file.insert(hk_index + hk_end +1, line1)
+			endt.append('\n\n')
+		end = ' '.join(end)
+		ahk_file.insert(hk_index + hk_end +1, start+end)
 	print()
 	#~ ahk_file.save()
 valve_key_list = {'Tab': 'tab', 
@@ -398,6 +415,7 @@ ahk_key_list = {
 			'Control_R': 'RCtrl', 
 			'Shift_L': 'LShift', 
 			'Shift_R': 'RShift', 
+			'Win_L': 'LWin', 
 			#~ 'Insert': 'ins', 
 			#~ 'Delete': 'del', 
 			'Next': 'Pgdn', 
@@ -429,12 +447,18 @@ ahk_key_list = {
 			'Button-1': 'LButton', 
 			'Button-2': 'MButton',	#mouse 2 in tkinter is middle button when avaliable 
 			'Button-3': 'RButton',	#mouse 2 in tkinter is middle button when avaliable 
-
-			#~ 'Pause': 'Pause',
 			'Num_Lock': 'NumLock',
 			'Scroll_Lock': 'ScrollLock',
-			'Caps_Lock': 'CapsLock'
-				}
+			'Caps_Lock': 'CapsLock'}
+
+ahk_symbols = {					# These have to be used when binding, however they look nasty so hencethe double mapping
+		'LWin':'#',
+		'LAlt': '!', 
+		'RAlt': '!', 
+		'LCtrl': '^', 
+		'RCtrl': '^', 
+		'LShift': '+', 
+		'RShift': '+'}
 
 if __name__ == '__main__':
 	import tttimer
