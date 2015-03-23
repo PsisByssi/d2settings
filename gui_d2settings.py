@@ -26,6 +26,7 @@ class AhkGrabber(batteries.HotKeyGrabber):
 		self.reset_on_click = False
 		self.reset_on_focus = False
 		self.custom_input = d2_func.valve_key_list
+		self.capture_mouse = [2]
 
 def add_default_field(customForm):
 	# Instead of manually adding the rows to custom form builder.
@@ -192,11 +193,15 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 						widg.original_value = bind_value
 						widg.set(bind_value)							# Set method on the Hotkeygrabber
 						try:
-							ahk_value = ahk_cfg[bind_value.lower()]
 							ahk_widg = tab.formRef[setting+'_remap']
+							ahk_value = ahk_cfg[bind_value.lower()]
+							#~ converted_ahk_values = []
+							#~ print('original keys',ahk_widg.original_keys)
+							ahk_value = ahk_widg.key_parser(ahk_value, d2_func.ahk_key_list)
 							ahk_widg.original_value = ahk_value
-							print('ORIGINAL VALUE AHK', ahk_widg.original_value )
+							#~ print('ORIGINAL VALUE AHK', ahk_widg.original_value )
 							ahk_widg.set(ahk_value)
+							print('original keys', ahk_widg.original_keys)
 						except KeyError:
 							pass
 						break
