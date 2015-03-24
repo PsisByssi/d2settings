@@ -11,16 +11,13 @@ Lwin:: return
 
 ;------------------- Hot Keys----------------------
 
-ALT & f9:: send {NumpadMult}			; Testing Mode, binds for loading items gold and heros etc 
+!f9:: send {NumpadMult}			; Testing Mode, binds for loading items gold and heros etc 
 
-ALT & F2:: send {NumpadDiv} 			; Makes Courier come to you and sends message
+!F2:: send {NumpadDiv} 			; Makes Courier come to you and sends message
 
-ALT & `:: send {end}					; Clears text from help menu etc
+!`:: send {end}					; Clears text from help menu etc
 
 LCtrl & LAlt:: send {f3}	; Toggles between rune and hero
-
-LCtrl & LAlt & g:: send {PgDn} 
-;ctrl & g :: send {PgDn} 
 
 ;------------------- Courier ----------------------
 

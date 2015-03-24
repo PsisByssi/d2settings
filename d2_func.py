@@ -7,6 +7,118 @@ from timstools import InMemoryWriter
 from timstools import ignored
 from timstools import only_numerics
 
+valve_key_list = {'Tab': 'tab', 
+			'Return': 'enter', 
+			'Escape': 'escape', 
+			'Space': 'space', 
+			'BackSpace': 'backspace', 
+			'Up': 'uparrow', 
+			'Down': 'downarrow', 
+			'Left': 'leftarrow', 
+			'Right': 'rightarrow', 
+			'Alt_L': 'alt', 
+			'Alt_R': 'alt', 
+			'Control_L': 'ctrl', 
+			'Control_R': 'ctrl', 
+			'Shift_L': 'shift', 
+			'Shift_R': 'shift', 
+			'Insert': 'ins', 
+			'Delete': 'del', 
+			'Next': 'pgdn', 
+			'Prior': 'pgup', 
+			'KP_End': 'end',
+			'KP_Home': 'kp_home',
+			'KP_Up': 'kp_uparrow', 
+			'KP_Prior': 'kp_pgup', 
+			'KP_Left': 'kp_leftarrow ', 
+			'KP_5': 'kp_5 ', 
+			'KP_Right': 'kp_rightarrow', 
+			'KP_End': 'kp_end', 
+			'KP_Down': 'kp_downarrow', 
+			'KP_Next': 'kp_pgdn', 			#TEST THIS ONE
+			'KP_Enter': 'kp_enter', 
+			'KP_Insert': 'kp_ins', 
+			'KP_Delete': 'kp_del', 
+			'KP_Divide': 'kp_slash',
+			'KP_Multiply': 'kp_multiply', 
+			'KP_Subtract': 'kp_minus', 
+			'KP_Add': 'kp_plus', 
+			'Caps_Lock': 'capslock', 
+			'tbd': 'joy1', 
+			'tbd': 'joy2', 
+			'tbd': 'joy3', 
+			'tbd': 'joy4', 
+			'tbd': 'aux1', 
+			'tbd': 'mwheeldown', 
+			'tbd': 'mwheelup', 
+			'Button-1': 'mouse1', 
+			'Button-2': 'mouse2',	#mouse 2 in tkinter is middle button when avaliable 
+			'tbd': 'mouse3', 
+			'tbd': 'mouse4', 
+			'tbd': 'mouse5', 
+			'Pause': 'pause'}
+
+ahk_key_list = {
+			#~ 'Tab': 'tab', 
+			#~ 'Return': 'enter', 
+			#~ 'Escape': 'escape', 
+			#~ 'Space': 'space', 
+			#~ 'BackSpace': 'backspace', 
+			'Up': 'Up', 
+			'Down': 'Down', 
+			'Left': 'Left', 
+			'Right': 'Right', 
+			'Alt_L': 'LAlt', 
+			'Alt_R': 'RAlt', 
+			'Control_L': 'LCtrl', 
+			'Control_R': 'RCtrl', 
+			'Shift_L': 'LShift', 
+			'Shift_R': 'RShift', 
+			'Win_L': 'LWin', 
+			#~ 'Insert': 'ins', 
+			#~ 'Delete': 'del', 
+			'Next': 'Pgdn', 
+			'Prior': 'PgUp', 
+			'KP_End': 'End',
+			'KP_Home': 'NumpadHome',
+			'KP_Up': 'NumpaduUp', 
+			'KP_Prior': 'NumpadPgUp', 
+			'KP_Left': 'NumpadLeft ', 
+			'KP_Clear': 'kp_5 ',			# This is the numlock off and then the numpad 5 button! 
+			'KP_Right': 'NumpadRight', 
+			'KP_End': 'NumpadEnd', 
+			'KP_Down': 'NumpadDown', 
+			'KP_Next': 'NumpadPgDn', 	
+			'KP_Enter': 'NumpadEnter', 
+			'KP_Insert': 'NumpadIns', 
+			'KP_Delete': 'NumpadDel', 
+			'KP_Divide': 'NumpadDiv',
+			'KP_Multiply': 'NumpadMult', 
+			'KP_Subtract': 'NumpadSub', 
+			'KP_Add': 'NumpadAdd',
+			'tbd': 'joy1', 
+			'tbd': 'joy2', 
+			'tbd': 'joy3', 
+			'tbd': 'joy4', 
+			'tbd': 'aux1', 
+			'tbd': 'mwheeldown', 
+			'tbd': 'mwheelup', 
+			'Button-1': 'LButton', 
+			'Button-2': 'MButton',	#mouse 2 in tkinter is middle button when avaliable 
+			'Button-3': 'RButton',	#mouse 2 in tkinter is middle button when avaliable 
+			'Num_Lock': 'NumLock',
+			'Scroll_Lock': 'ScrollLock',
+			'Caps_Lock': 'CapsLock'}
+
+ahk_symbols = {					# These have to be used when binding, however they look nasty so hencethe double mapping
+		'LWin':'#',
+		'LAlt': '!', 
+		'RAlt': '!', 
+		'LCtrl': '^', 
+		'RCtrl': '^', 
+		'LShift': '+', 
+		'RShift': '+'}
+
 def read_settings():
 	cfg_settings = {}
 	bind_settings = {}
@@ -48,16 +160,11 @@ def read_settings():
 						continue
 					cfg_values = remove_crud(row)
 					cfg_settings[setting] = cfg_values			# save the setting and values
-	#~ pprint(cfg_settings)
-	#~ pprint(bind_settings)
 	ahk_settings = read_ahk_file()
 	return cfg_settings, bind_settings, ahk_settings
 
 def read_ahk_file():
-	# We do not need to write a dota name for what its mapped to, just check what button is mapped
-	# in the cfg, and match it like that.
 	ahk_bind_settings = {}
-	#~ return ahk_bind_settings
 	with open('dota_binds.ahk', 'r', newline='') as file:
 		reader = csv.reader(file, delimiter=' ')
 		#~ non_empty_rows = ((i, row) for i, row in enumerate(reader) if row and row[0] and row[0][0] !=';' )
@@ -366,143 +473,27 @@ def save_ahk(gui_main, ahk_file, tab, ahk_grabber, setting, value):
 	print(start+end)
 	print()
 	#~ ahk_file.save()
-valve_key_list = {'Tab': 'tab', 
-			'Return': 'enter', 
-			'Escape': 'escape', 
-			'Space': 'space', 
-			'BackSpace': 'backspace', 
-			'Up': 'uparrow', 
-			'Down': 'downarrow', 
-			'Left': 'leftarrow', 
-			'Right': 'rightarrow', 
-			'Alt_L': 'alt', 
-			'Alt_R': 'alt', 
-			'Control_L': 'ctrl', 
-			'Control_R': 'ctrl', 
-			'Shift_L': 'shift', 
-			'Shift_R': 'shift', 
-			'Insert': 'ins', 
-			'Delete': 'del', 
-			'Next': 'pgdn', 
-			'Prior': 'pgup', 
-			'KP_End': 'end',
-			'KP_Home': 'kp_home',
-			'KP_Up': 'kp_uparrow', 
-			'KP_Prior': 'kp_pgup', 
-			'KP_Left': 'kp_leftarrow ', 
-			'KP_5': 'kp_5 ', 
-			'KP_Right': 'kp_rightarrow', 
-			'KP_End': 'kp_end', 
-			'KP_Down': 'kp_downarrow', 
-			'KP_Next': 'kp_pgdn', 			#TEST THIS ONE
-			'KP_Enter': 'kp_enter', 
-			'KP_Insert': 'kp_ins', 
-			'KP_Delete': 'kp_del', 
-			'KP_Divide': 'kp_slash',
-			'KP_Multiply': 'kp_multiply', 
-			'KP_Subtract': 'kp_minus', 
-			'KP_Add': 'kp_plus', 
-			'Caps_Lock': 'capslock', 
-			'tbd': 'joy1', 
-			'tbd': 'joy2', 
-			'tbd': 'joy3', 
-			'tbd': 'joy4', 
-			'tbd': 'aux1', 
-			'tbd': 'mwheeldown', 
-			'tbd': 'mwheelup', 
-			'Button-1': 'mouse1', 
-			'Button-2': 'mouse2',	#mouse 2 in tkinter is middle button when avaliable 
-			'tbd': 'mouse3', 
-			'tbd': 'mouse4', 
-			'tbd': 'mouse5', 
-			'Pause': 'pause'}
-
-ahk_key_list = {
-			#~ 'Tab': 'tab', 
-			#~ 'Return': 'enter', 
-			#~ 'Escape': 'escape', 
-			#~ 'Space': 'space', 
-			#~ 'BackSpace': 'backspace', 
-			'Up': 'Up', 
-			'Down': 'Down', 
-			'Left': 'Left', 
-			'Right': 'Right', 
-			'Alt_L': 'LAlt', 
-			'Alt_R': 'RAlt', 
-			'Control_L': 'LCtrl', 
-			'Control_R': 'RCtrl', 
-			'Shift_L': 'LShift', 
-			'Shift_R': 'RShift', 
-			'Win_L': 'LWin', 
-			#~ 'Insert': 'ins', 
-			#~ 'Delete': 'del', 
-			'Next': 'Pgdn', 
-			'Prior': 'PgUp', 
-			'KP_End': 'End',
-			'KP_Home': 'NumpadHome',
-			'KP_Up': 'NumpaduUp', 
-			'KP_Prior': 'NumpadPgUp', 
-			'KP_Left': 'NumpadLeft ', 
-			'KP_Clear': 'kp_5 ',			# This is the numlock off and then the numpad 5 button! 
-			'KP_Right': 'NumpadRight', 
-			'KP_End': 'NumpadEnd', 
-			'KP_Down': 'NumpadDown', 
-			'KP_Next': 'NumpadPgDn', 	
-			'KP_Enter': 'NumpadEnter', 
-			'KP_Insert': 'NumpadIns', 
-			'KP_Delete': 'NumpadDel', 
-			'KP_Divide': 'NumpadDiv',
-			'KP_Multiply': 'NumpadMult', 
-			'KP_Subtract': 'NumpadSub', 
-			'KP_Add': 'NumpadAdd',
-			'tbd': 'joy1', 
-			'tbd': 'joy2', 
-			'tbd': 'joy3', 
-			'tbd': 'joy4', 
-			'tbd': 'aux1', 
-			'tbd': 'mwheeldown', 
-			'tbd': 'mwheelup', 
-			'Button-1': 'LButton', 
-			'Button-2': 'MButton',	#mouse 2 in tkinter is middle button when avaliable 
-			'Button-3': 'RButton',	#mouse 2 in tkinter is middle button when avaliable 
-			'Num_Lock': 'NumLock',
-			'Scroll_Lock': 'ScrollLock',
-			'Caps_Lock': 'CapsLock'}
-
-ahk_symbols = {					# These have to be used when binding, however they look nasty so hencethe double mapping
-		'LWin':'#',
-		'LAlt': '!', 
-		'RAlt': '!', 
-		'LCtrl': '^', 
-		'RCtrl': '^', 
-		'LShift': '+', 
-		'RShift': '+'}
+	
+def convert_akh_keys(hot_key, ahk_widg):
+	'''
+	Changes Modifiyers from symbols into Words
+	'''
+	print('CONVERTING AHK KEYS', hot_key)
+	reconstructed = []
+	if len(hot_key) == 1:				# Hotkey is all one string i.e ^!6
+		#~ print(1111, hot_key[0])
+		if len(hot_key[0]) > 1:			# A single Hotkey will never be a modifiyer key or symbol
+			#~ print(2222)
+			for char in hot_key[0:-1]:	# All But the last are modifiery keys
+				unsymbol = ahk_widg.key_parser(char, ahk_symbols)
+				print('unsymbol', unsymbol)
+				reconstructed .append(unsymbol)
+		reconstructed.append(ahk_widg.key_parser(hot_key[-1], ahk_key_list))	# Add the last entry, or if this is a one character string i.e 
+	tk_form = ahk_widg.key_parser(hot_key, ahk_key_list)
+	valve_form = ahk_widg.key_parser(tk_form)
+	print('reconstructed', reconstructed)
+	return valve_form
 
 if __name__ == '__main__':
-	import tttimer
-	#~ print(help(tttimer))
-	
-	DICT = {}
-	LIST = []
-	for i in range(0,500000):
-		LIST.append(i*150)
-		DICT.update({i:i*150})
-	def lister():
-		with open('dota_binds.ahk', 'r', newline='') as file:
-			reader = csv.reader(file, delimiter=' ')
-			for i, row in enumerate(reader):
-				if row and row[0] and row[0][0]!=';':
-					#~ print(row)
-					#~ print(row)
-					pass
-	def dicter():
-		with open('dota_binds.ahk', 'r', newline='') as file:
-			reader = csv.reader(file, delimiter=' ')
-			non_empty_rows = ((i, row) for i, row in enumerate(reader) if row and row[0] and row[0][0] !=';' )
-			for i, row in non_empty_rows:
-				#~ print(row)
-				pass
-	print('start')
-	print(tttimer.total(1,lister))
-	print(tttimer.total(1,dicter))
-	
+	hi = '1'
+	print(hi[-1])

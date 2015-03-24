@@ -3,6 +3,8 @@ import tkinter.ttk as ttk
 from pprint import pprint
 import glob
 
+from PIL import Image as PImage	
+from PIL import ImageTk
 import tkquick.gui.maker as maker
 from tkquick.gui.style_defaults import *
 from tkquick.gui import batteries
@@ -33,7 +35,6 @@ def add_default_field(customForm):
 	# Each item that has a reference name in the dictionary gets a default value field
 	for i, row in enumerate(customForm[:]):
 		for col in row:
-			#~ print(col[2])
 			if col[2]:							# get the reference name and add default to the end
 				def_ref = col[2]+'_default'
 				new_row = list(row)
@@ -48,8 +49,6 @@ def add_remap_field(customForm):
 	for i, row in enumerate(customForm[:]):
 		for col in row:
 			if 'BindKeyGrabber' in col[0].__name__:		
-				#~ print(col[0])
-				#~ print('remapping...')
 				if col[2]:							# get the reference name and add remap to the end
 					def_ref = col[2]+'_remap'
 					new_row = list(row)	
@@ -75,7 +74,7 @@ def add_headings(customForm,width=3):
 		customForm.insert(1,
 				((ttk.Separator,	None,None,dict(cfg_gridEW,**{'columnspan':'3'}),{}),),)
 		
-class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page	
+class Gui_Main(maker.GuiMakerWindowMenu):
 	def start(self):
 		self.style = {'bg':'grey75','bd':5,'relief':'flat'}
 		self.customForm	= 	[
@@ -89,7 +88,6 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 			event.widget.master.changed = True		
 		for tab in self.formRef['settings'].widget_ref.values():		# The notebook tabs
 			for widget in tab.formRef.values():							# adds binds to all the widgets to track their changes
-				#~ print(repr(widget))
 				if isinstance(widget, batteries.HotKeyGrabber):
 					widget.ent.bind('<FocusIn>', change_class, add='+')	# when saving i just have to check the widget saved in formRef, because that is what we mark here
 				elif isinstance(widget, ttk.Checkbutton):
@@ -114,7 +112,7 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 		
 	def load_cfg(self, cfg, bind_cfg, ahk_cfg):
 		def set_default_value(set_checkbox_on=False,ignore_mode=False):	# Func to set defaults!
-			with ignored(KeyError):			# If there is no default value whateva
+			with ignored(KeyError):			
 				try:
 					try:
 						index = cfg_values.index('Default') + 1
@@ -135,7 +133,7 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 						index = cfg_values.index('tooltip') + 1
 					except ValueError:
 						index = cfg_values.index('Tooltip') + 1
-				except Exception:pass							# No Value Set
+				except Exception:pass									# No Value Set
 				else:
 					text = cfg_values[index]
 					widg = tab.formRef[setting]
@@ -144,73 +142,46 @@ class Gui_Main(maker.GuiMakerWindowMenu):	#controler of page
 		for tab in self.formRef['settings'].widget_ref.values():		#The notebook tabs
 			for setting, tkvar in tab.variables.items():
 				for cfg_setting, cfg_values in cfg.items():
-					if setting == cfg_setting:				# We are only dealing with settings that are not ignored!
-						#~ print(cfg_setting,'cfg setting',cfg_values)
-						if cfg_values[0] not in ('//'):	# The setting has a value associated with it
-							#~ print('value assocated', cfg_values[0])
-							#~ print(setting, cfg_values)
-							#~ print()
+					if setting == cfg_setting:							# We are only dealing with settings that are not ignored!
+						if cfg_values[0] not in ('//'):					# The setting has a value associated with it
 							tkvar.set(cfg_values[0])
 							set_default_value()
 							set_tooltip()
-						else:								# These settings require no argument they are on by being presetn
-							#~ print('No argument setting')
-							#~ print(setting,cfg_values)
-							#~ if cfg_values[0] == '//':
-								
+						else:											# These settings require no argument they are on by being presetn
 							set_default_value()
 							tkvar.set(1)
 							set_tooltip()
 						break
-					elif '//IGNORE' in cfg_setting:					# Commented Out Values
-						cfg_setting = cfg_setting.split(' ')[-1]	# Remove the //IGNORE
+					elif '//IGNORE' in cfg_setting:						# Commented Out Values
+						cfg_setting = cfg_setting.split(' ')[-1]		# Remove the //IGNORE
 						if setting == cfg_values[0]:
-							if cfg_values[0] not in ('//'):	# The setting has a value associated with it
-								#~ print('value assocated', cfg_values[1])
-								#~ print(setting, cfg_values)
-								#~ print()
+							if cfg_values[0] not in ('//'):				# The setting has a value associated with it
 								tkvar.set(cfg_values[1])
 								set_default_value(set_checkbox_on=1)
 								set_tooltip()
-							else:								# These settings require no argument they are on by being presetn
-								#~ print('No argument setting')
-								#~ print(setting, cfg_values)
-								#~ if cfg_values[0] == '//':
-									
+							else:										# These settings require no argument they are on by being presetn
 								set_default_value(set_checkbox_on=1)
 								tkvar.set(1)
 								set_tooltip()
-								#~ print()
 							break
-					else:
-						#~ print('NO MATCH', setting)
-						pass
-			for setting, widg in tab.formRef.items():						# Handle the bind settings from the autoexec
+			for setting, widg in tab.formRef.items():					# Handle the bind settings from the autoexec
 				for bind_setting, bind_values in bind_cfg.items():              
-					#~ print('calling set', )
 					bind_value = bind_setting	 
-					if setting in bind_values:						# Atm i'm allowing myself to place the tag anywhere in the values 
+					if setting in bind_values:							# Atm i'm allowing myself to place the tag anywhere in the values 
 						widg.original_value = bind_value
 						widg.set(bind_value)							# Set method on the Hotkeygrabber
 						try:
-							ahk_widg = tab.formRef[setting+'_remap']
+							ahk_widg = tab.formRef[setting+'_remap']	# See if there is a remapped hoteky
 							ahk_value = ahk_cfg[bind_value.lower()]
-							#~ converted_ahk_values = []
-							#~ print('original keys',ahk_widg.original_keys)
-							ahk_value = ahk_widg.key_parser(ahk_value, d2_func.ahk_key_list)
 							ahk_widg.original_value = ahk_value
-							#~ print('ORIGINAL VALUE AHK', ahk_widg.original_value )
-							ahk_widg.set(ahk_value)
-							print('original keys', ahk_widg.original_keys)
+							converted_form = d2_func.convert_akh_keys(ahk_value, ahk_widg)
+							ahk_widg.set(converted_form, case='lower')
+							print('before parse',ahk_value)
+							print('after parse', converted_form)
 						except KeyError:
 							pass
 						break
-					#~ elif setting+'_remap' in bind_values:		
-				#~ print('Ahk')
-				#~ pprint(ahk_cfg)
-				#~ for ahk_bind_setting, ahk_bind_value in ahk_cfg.items():
-					#~ if a
-
+						
 	def reload_cfg(self):
 		pass
 	def save_cfg(self):
@@ -624,16 +595,8 @@ class MacroSettings(maker.GuiMakerWindowMenu):
 			((ttk.Label, 'Smart stop',None,		cfg_grid,{}),
 			(BindKeyGrabber, '','smart_stop_hotkey',		cfg_grid,{})),
 			
-			#~ ((ttk.Label, 'Netgraph Toggle Hotkey',None,		cfg_grid,{}),
 			((ttk.Label, 'Smart hold',None,		cfg_grid,{}),
-			(BindKeyGrabber, '','smart_hold_hotkey',		cfg_grid,{})),
-			
-			#~ ((ttk.Label, 'Netgraph Toggle Hotkey',None,		cfg_grid,{}),
-			#~ (BindKeyGrabber, '','netgraph_hotkey',		cfg_grid,{})),
-			
-			#~ ((ttk.Label, 'Netgraph Toggle Hotkey',None,		cfg_grid,{}),
-			#~ (BindKeyGrabber, '','netgraph_hotkey',		cfg_grid,{}))
-			]
+			(BindKeyGrabber, '','smart_hold_hotkey',		cfg_grid,{}))]
 		add_default_field(self.customForm)
 		add_remap_field(self.customForm)
 		add_headings(self.customForm, width=4)
@@ -818,27 +781,6 @@ class StandardMenu(maker.GuiMakerWindowMenu):
 		add_headings(self.customForm)
 		add_remap_field(self.customForm)
 		
-class D(maker.GuiMakerWindowMenu):
-	def start(self):
-		self.customForm	= 	[
-			((ttk.Checkbutton, '','',		cfg_grid,{}),
-			(ttk.Label, '',None,	cfg_grid,{})),
-		
-			((ttk.Label, '',None,		cfg_grid,{}),
-			(ttk.Entry, '','',		cfg_grid,{})),
-			
-			((ttk.Label, '',None,		cfg_grid,{}),
-			(ttk.Entry, '','',		cfg_grid,{})),
-			
-			((ttk.Label, '',None,		cfg_grid,{}),
-			(ttk.Entry, '','',		cfg_grid,{})),
-			
-			((ttk.Label, '',None,		cfg_grid,{}),
-			(BindKeyGrabber, '','here',		cfg_grid,{}))]
-		#~ add_default_field(self.customForm)
-		#~ add_headings(self.customForm)
-		#~ add_remap_field(self.customForm)
-
 class D2(maker.GuiMakerWindowMenu):
 	def start(self):
 		self.customForm	= 	[
@@ -854,8 +796,27 @@ class D2(maker.GuiMakerWindowMenu):
 		#~ add_headings(self.customForm)
 		#~ add_remap_field(self.customForm)
 
-if __name__ == '__main__': 
+class SplashScreen(tk.Toplevel):
+	toolPhotoObjs=[]
+	imgdir= 'img'
+	def __init__(self, root):
+		tk.Toplevel.__init__(self, root)
+		self.overrideredirect(True)			# Hides the Window Border
+		ws = self.winfo_screenwidth()
+		hs = self.winfo_screenheight()	
+		w=640
+		h=400
+		x = (ws/2) - (w/2)
+		y = (hs/2) - (h/2)
+		self.geometry('%dx%d+%d+%d' % (w, h, x, y))
+		self.attributes("-topmost", True)
+		imgobj = PImage.open(os.path.join(self.imgdir, 'splash.png'))	
+		imgobj = ImageTk.PhotoImage(imgobj) 
+		button = ttk.Label(self, image=imgobj)
+		self.toolPhotoObjs.append(imgobj) 		# keep a reference to image or garbage collected
+		button.pack(expand=1,fill='both')
 
+if __name__ == '__main__':
 	root = tk.Tk()
 	main_gui = Gui_Main(root)
 	#~ print(help(tk))
