@@ -1,0 +1,22 @@
+.. Dota 2 Settings Tweaker documentation master file, created by
+   sphinx-quickstart on Mon Mar 30 16:29:51 2015.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to Dota 2 Settings Tweaker's documentation!
+===================================================
+
+**Contents:**
+
+.. toctree::
+	:maxdepth: 2
+	
+	hptoggle
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+

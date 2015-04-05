@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from pprint import pprint
 import glob
+import webbrowser
 
 from PIL import Image as PImage	
 from PIL import ImageTk
@@ -9,8 +10,8 @@ import tkquick.gui.maker as maker
 from tkquick.gui.style_defaults import *
 from tkquick.gui import batteries
 from tkquick.gui import tooltip
+import timstools
 from timstools import ignored
-from timstools import InMemoryWriter
 
 import d2_func
 
@@ -78,7 +79,7 @@ class Gui_Main(maker.GuiMakerWindowMenu):
 	def start(self):
 		self.style = {'bg':'grey75','bd':5,'relief':'flat'}
 		self.customForm	= 	[
-			(SettingsNoteBook, '','settings',		cfg_grid,c_label)]			
+		(SettingsNoteBook, '','settings',		cfg_grid,c_label)]			
 		self.toolBar = [(('save', self.save_cfg,  {'side': tk.RIGHT},c_button),
 						('reset', self.reload_cfg, {'side': tk.RIGHT},c_button))]
 	def finish(self):
@@ -100,15 +101,29 @@ class Gui_Main(maker.GuiMakerWindowMenu):
 	
 	def help_me(self, event):
 		if isinstance(event.widget, ttk.Notebook):
+			#~ print('WE GOT A NOTEBOOK')
 			widget = event.widget
 		else:
+			#~ print('looping', repr(event.widget))
 			widget = event.widget 
 			while 1:
 				widget = widget.master
+				#~ print(repr(widget))
 				if isinstance(widget, ttk.Notebook):
 					break
-		print(repr(widget))
-		tab = widget.select()
+		selected_tab = widget.select()
+		selected_tab = widget.nametowidget(selected_tab)
+		try:
+			selected_tab.help_url
+			help_url = selected_tab.help_url+'.html'
+		except AttributeError as e:
+			print(e)
+			help_url = 'index.html'
+		if timstools.internet_on():	# If we can get an internet connection
+			#~ webbrowser.open(help_url)	# atm on interents hosting of the stuff so just local
+		#~ else:
+			help_dir = os.path.join(*('help','_build','html')) 
+			webbrowser.open(os.path.join(help_dir,help_url))
 		
 	def load_cfg(self, cfg, bind_cfg, ahk_cfg):
 		def set_default_value(set_checkbox_on=False,ignore_mode=False):	# Func to set defaults!
@@ -174,10 +189,12 @@ class Gui_Main(maker.GuiMakerWindowMenu):
 							ahk_widg = tab.formRef[setting+'_remap']	# See if there is a remapped hoteky
 							ahk_value = ahk_cfg[bind_value.lower()]
 							ahk_widg.original_value = ahk_value
-							converted_form = d2_func.convert_akh_keys(ahk_value, ahk_widg)
-							ahk_widg.set(converted_form, case='lower')
-							print('before parse',ahk_value)
-							print('after parse', converted_form)
+							no_symbols = d2_func.convert_akh_symbols(ahk_value, ahk_widg)
+							tk_form = ahk_widg.key_parser(no_symbols, d2_func.ahk_key_list)
+							valve_form = ahk_widg.key_parser(tk_form, v=False)
+							#~ print('before parse',ahk_value, ' then ', no_symbols, ' tkform ',tk_form)
+							#~ print('after parse', valve_form)
+							ahk_widg.set(valve_form, case='lower')
 						except KeyError:
 							pass
 						break
@@ -207,11 +224,16 @@ class Gui_Main(maker.GuiMakerWindowMenu):
 					if 'hpkey' in setting:
 						d2_func.save_hp_keys(setting, value)
 					elif '_remap' in setting:
-						if not hasattr(self.app, 'ahk_file'):
-							self.app.ahk_file = InMemoryWriter('dota_binds.ahk')
 						d2_func.save_ahk(self, self.app.ahk_file, tab, widget, setting, value)
-
+					elif 'courier_' in setting:
+						d2_func.save_courier_macro(self, self.app.ahk_file, tab, widget, setting, value)
 					else:
+						if isinstance(widget, BindKeyGrabber):
+							ahk_grabber = tab.formRef[setting+'_remap']
+							ahk_hk = ahk_grabber.get()
+							if ahk_hk != ahk_grabber.original_value:
+								print('gettting ffs' ,ahk_grabber.get())
+								d2_func.save_ahk(self, self.app.ahk_file, tab, ahk_grabber, setting+'_remap', ahk_hk)
 						d2_func.save_settings(self.app.auto_exec, setting, value)	# Edits the in memory file		
 
 		self.app.auto_exec.save('autoexec_saved.cfg')
@@ -222,13 +244,16 @@ class SettingsNoteBook(maker.GuiNoteBook):			# Main controller notebook, used to
 		self.style = {'bg':'#232327','bd':5,'relief':'flat'}
 		#~ self.conPack = {'expand':'1','fill':'both', 'side':'top'}
 		#~ self.config(padx=40,pady=40)		
-		self.widgList = [ProgramSetup,MiscSettings,NetGraph,InternetSettings,MacroSettings,PerformanceSettings,PainFadeSettings,StandardMenu,HpSegment,TestMode]
+		self.widgList = [ProgramSetup,MiscSettings,NetGraph,InternetSettings,MacroSettings,PerformanceSettings,PainFadeSettings,StandardMenu,HpSegment,Testing]
 		self.tabText = ['Launch','Misc','NetGraph','Internet','Macros','Performance','Damage Delay', 'Standard Options','Hp Segment','Test Scripts']
 		#~ self.nbStyle=c_hiddenNotebook	# only woring in main not in running from script
 		self.widgSide = ['nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew','nsew']
 		self.padding=[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
-
+	def finish(self):
+		for i in range(0,len(self.widgList)):		# Makes the frame grab focus instead of the hotkeygrabber
+			self.widget_ref[i].configure(takefocus=1)
 class ProgramSetup(maker.GuiMakerWindowMenu):						
+	help_url = 'launch'
 	def start(self):
 		self.customForm	= 	[
 			((ttk.Label, 'Reload autoexec.cfg Hotkey',None,		cfg_grid,{}),
@@ -572,14 +597,33 @@ class MiscSettings(maker.GuiMakerWindowMenu):
 		add_remap_field(self.customForm)
 		add_headings(self.customForm, width=3)
 class MacroSettings(maker.GuiMakerWindowMenu):
+	help_url = 'macros'
 	def start(self):
 		self.customForm	= 	[						
 			((ttk.Label, 'Courier Deliver & Message',None,		cfg_grid,{}),
 			(BindKeyGrabber, '','courier_hotkey',		cfg_grid,{})),
 			
 			(maker.BLANK,
-			(ttk.Entry, 'msg','enter message here',	cfg_grid,{})),
+			(ttk.Entry, 'msg','enter message here',	cfg_grid,{})),	#https://www.youtube.com/watch?v=M1WyPCLz0jk
 			
+			((ttk.Label, 'Courier to base macro',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','courier_base_hotkey',		cfg_grid,{})),
+			
+			((ttk.Label, 'Courier to secret shop macro',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','courier_secret_hotkey',		cfg_grid,{})),
+			
+			((ttk.Label, 'Courier stash items macro',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','courier_stash_hotkey',		cfg_grid,{})),
+		
+			((ttk.Label, 'Courier grab stash items macro',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','courier_grab_hotkey',		cfg_grid,{})),
+		
+			((ttk.Label, 'Courier transfer items macro',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','courier_transfer_hotkey',		cfg_grid,{})),
+		
+			((ttk.Label, 'Courier speed burst macro',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','courier_speed_hotkey',		cfg_grid,{})),
+		
 			((ttk.Label, 'Toggle Rune Spots & Hero',None,		cfg_grid,{}),
 			(BindKeyGrabber, '','runechecker_hotkey',		cfg_grid,{})),
 			
@@ -600,16 +644,37 @@ class MacroSettings(maker.GuiMakerWindowMenu):
 		add_default_field(self.customForm)
 		add_remap_field(self.customForm)
 		add_headings(self.customForm, width=4)
+	def finish(self):
+		tooltip_text = ['Lvl 6',
+						'Lvl 11',
+						'Lvl 16', 
+						'Aghanim\'s Scepter Lvl 6',
+						'Aghanim\'s Scepter Lvl 11',
+						'Aghanim\'s Scepter Lvl 16',
+						'Aghs Lvl 6 without magic resistance',
+						'Aghs Lvl 11 without magic resistance',
+						'Aghs Lvl 16 without magic resistance',
+						'Used in Hp100 for 1000'
+						]
+		d2_func.load_courier_macro(self.app.ahk_file)
+		#~ for i, text in zip(range(1,11), tooltip_text):	
+			#~ widg = self.formRef['hpkey'+str(i)]
+			#~ tooltip.ToolTip(widg, delay=200, text=text)
+		
 class Testing(maker.GuiMakerWindowMenu):
+	help_url = 'testing'
 	def start(self):
 		self.customForm	= 	[
-			((ttk.Label, 'Mute/unmute testing mode',None,		cfg_grid,{}),
-			(BindKeyGrabber, '','testing_lock_hotkey',		cfg_grid,{})),
+			((ttk.Label, 'Enable/Disable Test key',None,		cfg_grid,{}),
+			(ttk.BindKeyGrabber, '','testing_lock_hotkey',		cfg_grid,{})),
 			
 			((ttk.Label, 'Test Mode Hotkey',None,		cfg_grid,{}),
 			(BindKeyGrabber, '','test_mode_hotkey_exception',		cfg_grid,{}))]
 		add_default_field(self.customForm)
+		add_headings(self.customForm)
+		add_remap_field(self.customForm)
 class HpSegment(maker.GuiMakerWindowMenu):
+	help_url = 'hptoggle'
 	class SelectedHeroes(maker.MakerScrolledList):
 		def start(self):
 			self.use_default_event_handler = True
@@ -710,27 +775,6 @@ class HpSegment(maker.GuiMakerWindowMenu):
 			widg = self.formRef['hpkey'+str(i)]
 			tooltip.ToolTip(widg, delay=200, text=text)
 
-class TestMode(maker.GuiMakerWindowMenu):
-	def start(self):
-		self.customForm	= 	[
-			((ttk.Label, 'Enable/Disable Test key',None,		cfg_grid,{}),
-			(BindKeyGrabber, '','testing_lock_hotkey',		cfg_grid,{})),
-			
-			((ttk.Label, 'Test Key',None,		cfg_grid,{}),
-			(BindKeyGrabber, '','here',		cfg_grid,{})),
-			
-			((ttk.Checkbutton, '','',		cfg_grid,{}),
-			(ttk.Label, '',None,	cfg_grid,{})),
-		
-			((ttk.Label, '',None,		cfg_grid,{}),
-			(ttk.Entry, '','here',		cfg_grid,{})),
-			
-			((ttk.Label, '',None,		cfg_grid,{}),
-			(BindKeyGrabber, '','here',		cfg_grid,{}))]
-		add_default_field(self.customForm)
-		add_headings(self.customForm)
-		add_remap_field(self.customForm)
-
 class AboutPage(maker.GuiMakerWindowMenu):
 	def start(self):
 		self.customForm	= 	[
@@ -775,6 +819,42 @@ class StandardMenu(maker.GuiMakerWindowMenu):
 			
 			((ttk.Label, 'dota_always_show_player_names',None,		cfg_grid,{}),
 			(ttk.Entry, '','dota_always_show_player_names',		cfg_grid,{})),
+			
+			((ttk.Label, 'dota_select_courier',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','dota_select_courier',		cfg_grid,{})),
+			
+			((ttk.Label, 'Main Ability 1',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','Main_Ability_1',		cfg_grid,{})),
+			
+			((ttk.Label, 'Main Ability 2',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','Main_Ability_2',		cfg_grid,{})),
+			
+			((ttk.Label, 'Main Ability Ultimate',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','Main_Ability_Ultimate',		cfg_grid,{})),
+			
+			((ttk.Label, 'Secondary Ability 1',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','Secondary_Ability_1',		cfg_grid,{})),
+			
+			((ttk.Label, 'Secondary Ability 2',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','Secondary_Ability_2',		cfg_grid,{})),
+			
+			((ttk.Label, 'Itemslot 1',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','Itemslot_1',		cfg_grid,{})),
+			
+			((ttk.Label, 'Itemslot 2',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','Itemslot_2',		cfg_grid,{})),
+			
+			((ttk.Label, 'Itemslot 3',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','Itemslot_3',		cfg_grid,{})),
+			
+			((ttk.Label, 'Itemslot 4',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','Itemslot_4',		cfg_grid,{})),
+			
+			((ttk.Label, 'Itemslot 5',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','Itemslot_5',		cfg_grid,{})),
+			
+			((ttk.Label, 'Itemslot 6',None,		cfg_grid,{}),
+			(BindKeyGrabber, '','Itemslot_6',		cfg_grid,{})),
 			
 			]
 		add_default_field(self.customForm)

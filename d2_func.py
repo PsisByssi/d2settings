@@ -210,10 +210,6 @@ def read_ahk_file():
 	#~ pprint(ahk_bind_settings)
 	return ahk_bind_settings
 	
-def load_exec_into_memory():
-	# All Lines are loaded into memory and wrote to file after all edits are made
-	return InMemoryWriter('autoexec.cfg')
-	
 def save_settings(exec_file, selected_setting, value):
 	IGNORE = False
 	def quotes_on_strings(value):	
@@ -385,52 +381,31 @@ def save_hp_keys(setting, value):
 				i += 1
 		file_writer.save()
 
-def save_ahk(gui_main, ahk_file, tab, ahk_grabber, setting, value):		
-	print()
-	print('save AHK', setting,value)
-	bind_grabber = tab.formRef[setting.split('_remap')[0]]
-	start = []							# The hotkey part
-	end = []							# The command to execute
-	for hk_index, row in enumerate(ahk_file):
-		if 'Hot Keys' in row:
+def load_courier_macro(ahk_file):
+
+	for i, row in enumerate(ahk_file):
+		if 'Courier' in row:
+			hk_index = i
 			break
-	for hk_end, row in enumerate(ahk_file[hk_index+1:]):
-		if ';----' in row:
-			break
-	try:									# Modify an existig mapping
-		hotkey_list = ahk_grabber.original_value
-		print('original value',hotkey_list)
-		if len(hotkey_list) == 1:pass
-		elif len(hotkey_list) == 2 and ahk_grabber.key_parser(hotkey_list[1], ahk_key_list) in ahk_grabber.tk_modifiers:
-			tk_form = ahk_grabber.key_parser(hotkey_list[0])
-			start.append(ahk_grabber.key_parser(tk_form, ahk_key_list))
-			start.append('&')
-			tk_form2 = ahk_grabber.key_parser(hotkey_list[1])
-			start.append(ahk_grabber.key_parser(tk_form2, ahk_key_list))
-			start.append('::')			
-			start.append('send')
-			start = ' '.join(start)
-			end = '11'
-			print('modidfied start',start)
-		#~ start = '{0}::'.format(ahk_grabber.original_value)
-		#~ print(start)
-		#~ print('astr ', start)
-		#~ for i, row in enumerate(ahk_file[hk_index:hk_end]):
-			#~ print(row)
-			#~ if start in row:
-				#~ print(start)
-				#~ print('FOUND ROW!!!', row)
-	except AttributeError:					# Create new ahk mapping that didn't exist before
-		hotkey_list = ahk_grabber.get()
+	#~ for i, row in enumerate(ahk_file[hk_index+1:]):
+		#~ if ';----' in row:
+			#~ hk_end = hk_index + i
+			#~ break
+	for i, row in enumerate(ahk_file[hk_index+1:]):
+		pass
+def save_ahk(gui_main, ahk_file, current_tab, ahk_grabber, setting, value):		
+	def hk_to_ahkhk(hotkey_list):
+		start = []							# The hotkey part
+		end = []							# The command to execute
 		if len(hotkey_list) == 1:
 			tk_form = ahk_grabber.key_parser(hotkey_list[0])
-			start.append(ahk_grabber.key_parser(tk_form, ahk_key_list))
+			start.append(ahk_grabber.key_parser(tk_form, ahk_key_list) + '::')
 		elif len(hotkey_list) == 2 and ahk_grabber.key_parser(hotkey_list[1]) in ahk_grabber.tk_modifiers:		# this enables bindings of just two modifyers, you could also do combinations of keys but thats awkward and takes more work to get the keys to still work as normal keys so cbf
 			tk_form = ahk_grabber.key_parser(hotkey_list[0])
 			start.append(ahk_grabber.key_parser(tk_form, ahk_key_list))
 			start.append('&')
 			tk_form2 = ahk_grabber.key_parser(hotkey_list[1])
-			start.append(ahk_grabber.key_parser(tk_form2, ahk_key_list))	
+			start.append(ahk_grabber.key_parser(tk_form2, ahk_key_list) + '::')	
 		else:
 			hot_key = []																# the hotkey cannot contain spaces in this form
 			for part in hotkey_list:
@@ -443,8 +418,7 @@ def save_ahk(gui_main, ahk_file, tab, ahk_grabber, setting, value):
 					hot_key.append(ahk_grabber.key_parser(tk_form, ahk_key_list))
 					break
 			hot_key = ''.join(part for part in hot_key)
-			start.append(hot_key)
-		start.append('::')			
+			start.append(hot_key + '::')
 		start.append('send')
 		start = ' '.join(start)
 		try:
@@ -452,7 +426,44 @@ def save_ahk(gui_main, ahk_file, tab, ahk_grabber, setting, value):
 		except TypeError:					# None Type, cannot create remap key as no key to map to
 			return
 		end.append(' {{{0}}}'.format(ahk_grabber.key_parser(to_send, ahk_key_list)))
-		print('from ahk_keylist,', start[-1])
+		return start, end		
+	#~ print()
+	#~ print('save AHK', setting,value)
+	bind_grabber = current_tab.formRef[setting.split('_remap')[0]]
+	start = []							# The hotkey part
+	end = []							# The command to execute
+	for i, row in enumerate(ahk_file):
+		if 'Hot Keys' in row:
+			hk_index = i
+			break
+	for i, row in enumerate(ahk_file[hk_index+1:]):
+		if ';----' in row:
+			hk_end = hk_index + i
+			break
+	try:									# Modify an existig mapping
+		old_hk = ahk_grabber.original_value
+		if len(old_hk) == 1:					# Assembling old_hk from a list into original str
+			old_hk_start = old_hk[0] + '::'
+		elif len(old_hk) == 2:
+			old_hk_start = '{0} & {1}::'.format(old_hk[0], old_hk[1])
+		#~ print('old_hk_start', old_hk_start)
+		for i, row in enumerate(ahk_file[hk_index:hk_end]):	# Looking for the row in the ahk file
+			if old_hk_start in row:
+				row_index = hk_index + i
+				#~ print('FOUND ROW!!!', row)
+				break
+		start, end = hk_to_ahkhk(value)						# Building new row and inserting
+		ahk_grabber.original_value = [start.split('::')[0]]
+		old_row = ahk_file[row_index]
+		old_to_send = old_row.split(' ')[2]
+		old_to_send_index = old_row.index(old_to_send)
+		rest_of_row = old_row[old_to_send_index+len(old_to_send):]
+		end.append(rest_of_row)
+		end = ' '.join(end)
+		ahk_file[row_index] = start + end 
+	except AttributeError:					# Create new ahk mapping that didn't exist before
+		hotkey_list = ahk_grabber.get()
+		start, end = hk_to_ahkhk(hotkey_list)
 		with ignored(AttributeError):		# get comment text from tooltip
 			text = ahk_grabber.tooltip_text
 		with ignored(AttributeError):
@@ -469,30 +480,62 @@ def save_ahk(gui_main, ahk_file, tab, ahk_grabber, setting, value):
 		except UnboundLocalError:
 			end.append('\n\n')
 		end = ' '.join(end)
-		ahk_file.insert(hk_index + hk_end +1, start+end)
+		ahk_file.insert(hk_end +1, start+end)
+	print()
 	print(start+end)
 	print()
-	#~ ahk_file.save()
+	ahk_file.save()
 	
-def convert_akh_keys(hot_key, ahk_widg):
-	'''
-	Changes Modifiyers from symbols into Words
-	'''
-	print('CONVERTING AHK KEYS', hot_key)
+def convert_akh_symbols(hot_key, ahk_widg):
+	'''Changes Modifiyers from symbols into ahk words'''
 	reconstructed = []
 	if len(hot_key) == 1:				# Hotkey is all one string i.e ^!6
-		#~ print(1111, hot_key[0])
-		if len(hot_key[0]) > 1:			# A single Hotkey will never be a modifiyer key or symbol
-			#~ print(2222)
-			for char in hot_key[0:-1]:	# All But the last are modifiery keys
+		if len(hot_key[0]) == 1:			# A single Hotkey will never be a modifiyer key or symbol
+			reconstructed.append(ahk_widg.key_parser(hot_key[0], ahk_key_list)) 
+		else:
+			for i, char in enumerate(hot_key[0]):	# All But the last are modifiery keys
 				unsymbol = ahk_widg.key_parser(char, ahk_symbols)
-				print('unsymbol', unsymbol)
-				reconstructed .append(unsymbol)
-		reconstructed.append(ahk_widg.key_parser(hot_key[-1], ahk_key_list))	# Add the last entry, or if this is a one character string i.e 
-	tk_form = ahk_widg.key_parser(hot_key, ahk_key_list)
-	valve_form = ahk_widg.key_parser(tk_form)
-	print('reconstructed', reconstructed)
-	return valve_form
+				if len(unsymbol) > 1:
+					reconstructed.append(unsymbol)
+				else:
+					break
+			reconstructed.append(hot_key[0][i:]) 
+		return reconstructed
+	else:
+		return hot_key
+
+def save_courier_macro(gui_main, ahk_file, current_tab, ahk_grabber, setting, value):
+	if setting == 'courier_hotkey':pass
+	else:
+		for i, row in enumerate(ahk_file):
+			if 'Courier' in row:
+				hk_index = i
+				break
+		for i, row in enumerate(ahk_file[hk_index+1:]):
+			if ';----' in row:
+				hk_end = hk_index + i
+				break
+		old_hk = ahk_grabber.original_value
+		if len(old_hk) == 1:					# Assembling old_hk from a list into original str
+			old_hk_start = old_hk[0] + '::'
+		elif len(old_hk) == 2:
+			old_hk_start = '{0} & {1}::'.format(old_hk[0], old_hk[1])
+		print('old_hk_start', old_hk_start)
+		for i, row in enumerate(ahk_file[hk_index:hk_end]):	# Looking for the row in the ahk file
+			if old_hk_start in row:
+				row_index = hk_index + i
+				print('FOUND ROW!!!', row)
+				break
+		start, end = hk_to_ahkhk(value)						# Building new row and inserting
+		ahk_grabber.original_value = [start.split('::')[0]]
+		old_row = ahk_file[row_index]
+		old_to_send = old_row.split(' ')[2]
+		old_to_send_index = old_row.index(old_to_send)
+		rest_of_row = old_row[old_to_send_index+len(old_to_send):]
+		end.append(rest_of_row)
+		end = ' '.join(end)
+		ahk_file[row_index] = start + end 
+	
 
 if __name__ == '__main__':
 	hi = '1'

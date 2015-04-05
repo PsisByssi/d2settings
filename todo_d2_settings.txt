@@ -29,3 +29,6 @@ items
 
 
 key, script 
+
+
+weird bug, when changing a hotkeyrabber to ttk.hotkeygrabnber get silence crash of that tab
