@@ -381,18 +381,6 @@ def save_hp_keys(setting, value):
 				i += 1
 		file_writer.save()
 
-def load_courier_macro(ahk_file):
-
-	for i, row in enumerate(ahk_file):
-		if 'Courier' in row:
-			hk_index = i
-			break
-	#~ for i, row in enumerate(ahk_file[hk_index+1:]):
-		#~ if ';----' in row:
-			#~ hk_end = hk_index + i
-			#~ break
-	for i, row in enumerate(ahk_file[hk_index+1:]):
-		pass
 def save_ahk(gui_main, ahk_file, current_tab, ahk_grabber, setting, value):		
 	def hk_to_ahkhk(hotkey_list):
 		start = []							# The hotkey part

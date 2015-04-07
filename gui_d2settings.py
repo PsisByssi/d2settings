@@ -225,8 +225,6 @@ class Gui_Main(maker.GuiMakerWindowMenu):
 						d2_func.save_hp_keys(setting, value)
 					elif '_remap' in setting:
 						d2_func.save_ahk(self, self.app.ahk_file, tab, widget, setting, value)
-					elif 'courier_' in setting:
-						d2_func.save_courier_macro(self, self.app.ahk_file, tab, widget, setting, value)
 					else:
 						if isinstance(widget, BindKeyGrabber):
 							ahk_grabber = tab.formRef[setting+'_remap']
@@ -656,7 +654,6 @@ class MacroSettings(maker.GuiMakerWindowMenu):
 						'Aghs Lvl 16 without magic resistance',
 						'Used in Hp100 for 1000'
 						]
-		d2_func.load_courier_macro(self.app.ahk_file)
 		#~ for i, text in zip(range(1,11), tooltip_text):	
 			#~ widg = self.formRef['hpkey'+str(i)]
 			#~ tooltip.ToolTip(widg, delay=200, text=text)
@@ -855,7 +852,6 @@ class StandardMenu(maker.GuiMakerWindowMenu):
 			
 			((ttk.Label, 'Itemslot 6',None,		cfg_grid,{}),
 			(BindKeyGrabber, '','Itemslot_6',		cfg_grid,{})),
-			
 			]
 		add_default_field(self.customForm)
 		add_headings(self.customForm)
