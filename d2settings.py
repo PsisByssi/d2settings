@@ -31,3 +31,24 @@ class MainApplication():
 		
 if __name__ == '__main__': 
 	main = MainApplication() 
+
+'''
+auto attack off
+a, will start autoattacking shit around,
+s,h - dont attack shit, exact same...
+
+auto attack on
+s, cancels attak but he will attack again and move
+h, will attack again in range
+
+if jukeing both will urn to spot before waiting next command, to get a hit off in trees u have to use a click on ground
+
+special
+hold turns auto attack on, u can acheive auto attacko on with movemnt by auto attack ground
+
+autoattack fails becaks it always defaults to most closest unit, when chasing and u want to attack just use a click on ground, dont use stop..
+you should rarley be using hold it is for lazy people
+
+
+
+'''
