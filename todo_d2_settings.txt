@@ -6,6 +6,7 @@ Testing Ignoring - seems good, can edit when ignored or unignored
 
 Testing - saving hotekys and binds- basic one all good - need to do muting and when no hotkey is saves
 Testing - hotkeygrabber - seems good!
+
 Testing - hp toggle	- on adding new have to create the text load block that is getting pointed to
 Testing - autohotkey binds
 
