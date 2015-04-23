@@ -221,7 +221,7 @@ def save_settings(exec_file, selected_setting, value):
 		IGNORE = True
 	for i, row in enumerate(exec_file):
 		if selected_setting in row:
-			print('found the row', row)
+			print('found the row: ', row)
 			break						# have the position now have to edit it
 	else:
 		print('Couldnt find the setting in the file... make sure its in theree')
@@ -387,6 +387,7 @@ def save_ahk(gui_main, ahk_file, current_tab, ahk_grabber, setting, value):
 		end = []							# The command to execute
 		if len(hotkey_list) == 1:
 			tk_form = ahk_grabber.key_parser(hotkey_list[0])
+			print('tk_form', tk_form)	#TBD fix the distinctuion between alt_r and alt_l etc depends if valve has a distinction!
 			start.append(ahk_grabber.key_parser(tk_form, ahk_key_list) + '::')
 		elif len(hotkey_list) == 2 and ahk_grabber.key_parser(hotkey_list[1]) in ahk_grabber.tk_modifiers:		# this enables bindings of just two modifyers, you could also do combinations of keys but thats awkward and takes more work to get the keys to still work as normal keys so cbf
 			tk_form = ahk_grabber.key_parser(hotkey_list[0])
@@ -415,8 +416,8 @@ def save_ahk(gui_main, ahk_file, current_tab, ahk_grabber, setting, value):
 			return
 		end.append(' {{{0}}}'.format(ahk_grabber.key_parser(to_send, ahk_key_list)))
 		return start, end		
-	#~ print()
-	#~ print('save AHK', setting,value)
+	print()
+	print('save AHK', setting,value)
 	bind_grabber = current_tab.formRef[setting.split('_remap')[0]]
 	start = []							# The hotkey part
 	end = []							# The command to execute
@@ -472,7 +473,7 @@ def save_ahk(gui_main, ahk_file, current_tab, ahk_grabber, setting, value):
 	print()
 	print(start+end)
 	print()
-	ahk_file.save()
+	ahk_file.save('ahk_test.ahk')
 	
 def convert_akh_symbols(hot_key, ahk_widg):
 	'''Changes Modifiyers from symbols into ahk words'''

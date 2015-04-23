@@ -24,6 +24,7 @@ class BindKeyGrabber(batteries.HotKeyGrabber):
 		self.custom_input = d2_func.valve_key_list
 		self.max_keys = 1
 		self.conf = {'width':15}
+		
 class AhkGrabber(batteries.HotKeyGrabber):
 	def start(self):
 		self.reset_on_click = False
@@ -184,7 +185,7 @@ class Gui_Main(maker.GuiMakerWindowMenu):
 					bind_value = bind_setting	 
 					if setting in bind_values:							# Atm i'm allowing myself to place the tag anywhere in the values 
 						widg.original_value = bind_value
-						widg.set(bind_value)							# Set method on the Hotkeygrabber
+						widg.set(bind_value)							
 						try:
 							ahk_widg = tab.formRef[setting+'_remap']	# See if there is a remapped hoteky
 							ahk_value = ahk_cfg[bind_value.lower()]
@@ -206,15 +207,10 @@ class Gui_Main(maker.GuiMakerWindowMenu):
 		for tab in self.formRef['settings'].widget_ref.values():		# The notebook tabs
 			for setting, widget in tab.formRef.items():	
 				if hasattr(widget, 'changed') and widget.changed:		 	
-					print('changed',repr(widget))
 					widget.changed = False
 					try:
 						value = widget.get()
-					except AttributeError:
-						#~ if isinstance(widget, batteries.HotKeyGrabber):
-							#~ print('in ho9tkey grabber')
-							#~ print(repr(widget.caller))
-							#~ value = widget.var.get()					
+					except AttributeError:				
 						if isinstance(widget, ttk.Checkbutton):			
 							tkvar = tab.variables[setting]
 							value = tkvar.get()
@@ -226,13 +222,15 @@ class Gui_Main(maker.GuiMakerWindowMenu):
 					elif '_remap' in setting:
 						d2_func.save_ahk(self, self.app.ahk_file, tab, widget, setting, value)
 					else:
+						d2_func.save_settings(self.app.auto_exec, setting, value)
 						if isinstance(widget, BindKeyGrabber):
+							# Ensure that Dotahks that are remapped have there remapped values updated if the dota value changes
+							# This can result in the ahk_grabber being saved twice, waste of speed :(
 							ahk_grabber = tab.formRef[setting+'_remap']
 							ahk_hk = ahk_grabber.get()
-							if ahk_hk != ahk_grabber.original_value:
-								print('gettting ffs' ,ahk_grabber.get())
-								d2_func.save_ahk(self, self.app.ahk_file, tab, ahk_grabber, setting+'_remap', ahk_hk)
-						d2_func.save_settings(self.app.auto_exec, setting, value)	# Edits the in memory file		
+							with ignored():
+								if ahk_hk != ahk_grabber.original_value:
+									d2_func.save_ahk(self, self.app.ahk_file, tab, ahk_grabber, setting+'_remap', ahk_hk)					
 
 		self.app.auto_exec.save('autoexec_saved.cfg')
 		print('Finished saving')
@@ -663,7 +661,7 @@ class Testing(maker.GuiMakerWindowMenu):
 	def start(self):
 		self.customForm	= 	[
 			((ttk.Label, 'Enable/Disable Test key',None,		cfg_grid,{}),
-			(ttk.BindKeyGrabber, '','testing_lock_hotkey',		cfg_grid,{})),
+			(BindKeyGrabber, '','testing_lock_hotkey',		cfg_grid,{})),
 			
 			((ttk.Label, 'Test Mode Hotkey',None,		cfg_grid,{}),
 			(BindKeyGrabber, '','test_mode_hotkey_exception',		cfg_grid,{}))]

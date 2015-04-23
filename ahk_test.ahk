@@ -11,7 +11,7 @@ Lwin:: return
 
 !F9:: send {NumpadMult}  		; Testing Mode, binds for loading items gold and heros etc  CHANGE BACK TO f9
 
-!F2:: send {NumpadDiv}   		; Makes Courier come to you and sends message
+RAlt:: send {NumpadDiv}    		; Makes Courier come to you and sends message
 
 !`:: send {end}					; Clears text from help menu etc
 

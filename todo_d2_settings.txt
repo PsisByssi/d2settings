@@ -4,18 +4,27 @@ can just yield instead of having to search the entire
 Testing normal settings for edits - seems good, could also add or remove tabs if the changes are greater or less than 4 charsI
 Testing Ignoring - seems good, can edit when ignored or unignored
 
-Testing - saving hotekys and binds- basic one all good - need to do muting and when no hotkey is saves
-Testing - hotkeygrabber - seems good!
+Saving Hotkeys
+	Without rempa field 							- good
+	With empty remap field, changing dota hk only	- good
+	With remap field, adding a remap key			- good
+	With remap field, editing a remap key			- good
+	With rempap field, editing a dota hk			- good
+	
+													- alt key remaps to ralt - TBD fix the distinctuion between alt_r and alt_l etc depends if valve has a distinction!
+													- cases are being changed in ahk file..  (is it a problem?)
+Make a key disabler
 
-Testing - hp toggle	- on adding new have to create the text load block that is getting pointed to
-Testing - autohotkey binds
+hp toggle	- on adding new have to create the text load block that is getting pointed to
+
+Work my program into it better,
+
+Documentation
+
+Add some checks for the types of hotkeys, and duplicates etc
 
 
 Hot key grabber picks up numkeys as CAPS ninstea of lowercase, see if its a problem for valve or not
-
-
-
-
 
 
 Tesint - Testing mode, spawn creatures etc 
@@ -28,8 +37,9 @@ heroes,
 settings
 items
 
-
-key, script 
+bind key, script 
 
 
 weird bug, when changing a hotkeyrabber to ttk.hotkeygrabnber get silence crash of that tab
+
+msg for deliver courier
