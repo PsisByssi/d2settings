@@ -17,21 +17,39 @@ import d2_func
 
 label_centered = dict(c_labelHS,**{'anchor':'center'})
 
+def validate_grabber(hk_grabber, hotkey, previous_hotkey):
+	# On Focus out this is called
+	if not d2_func.key_validator(hotkey, hk_grabber.form_name, previous_hotkey):
+		print('Failure')
+		hk_grabber.config(state='disabled')
+	else:
+		print('success')
+		hk_grabber.config(state='normal')
+	#~ pprint(d2_func.DOTA_HOTKEYS)
+	
 class BindKeyGrabber(batteries.HotKeyGrabber):
 	def start(self):
 		self.reset_on_click = False
 		self.reset_on_focus = False
 		self.custom_input = d2_func.valve_key_list
 		self.max_keys = 1
-		self.conf = {'width':15}
-		
+		self.conf = {'width':15, 'cursor':'hand2', 'anchor':'center'}
+		self.text='...'
+	def finish(self):	
+		self.bind('<FocusOut>', lambda event:validate_grabber(self, self.get(), self.previous_entry))
+		#~ ttk.Style().map(self.ent['style'], fieldbackground=[('disabled','red')])
+				
 class AhkGrabber(batteries.HotKeyGrabber):
 	def start(self):
 		self.reset_on_click = False
 		self.reset_on_focus = False
 		self.custom_input = d2_func.valve_key_list
 		self.capture_mouse = [2]
-
+		self.conf = {'cursor':'hand2', 'anchor':'center'}
+		self.text='...'
+	def finish(self):
+		self.bind('<FocusOut>', lambda event:validate_grabber(self.get()))
+	
 def add_default_field(customForm):
 	# Instead of manually adding the rows to custom form builder.
 	# Each item that has a reference name in the dictionary gets a default value field
@@ -91,7 +109,7 @@ class Gui_Main(maker.GuiMakerWindowMenu):
 		for tab in self.formRef['settings'].widget_ref.values():		# The notebook tabs
 			for widget in tab.formRef.values():							# adds binds to all the widgets to track their changes
 				if isinstance(widget, batteries.HotKeyGrabber):
-					widget.ent.bind('<FocusIn>', change_class, add='+')	# when saving i just have to check the widget saved in formRef, because that is what we mark here
+					widget.bind('<FocusIn>', change_class, add='+')	# when saving i just have to check the widget saved in formRef, because that is what we mark here
 				elif isinstance(widget, ttk.Checkbutton):
 					widget.bind('<Button-1>', change_normal, add='+')
 				elif isinstance(widget, maker.MakerScrolledList):
@@ -155,18 +173,18 @@ class Gui_Main(maker.GuiMakerWindowMenu):
 					widg = tab.formRef[setting]
 					tooltip.ToolTip(widg, delay=200, text=text)
 					widg.tooltip_text = text
+		
 		for tab in self.formRef['settings'].widget_ref.values():		#The notebook tabs
 			for setting, tkvar in tab.variables.items():
 				for cfg_setting, cfg_values in cfg.items():
 					if setting == cfg_setting:							# We are only dealing with settings that are not ignored!
 						if cfg_values[0] not in ('//'):					# The setting has a value associated with it
 							tkvar.set(cfg_values[0])
-							set_default_value()
-							set_tooltip()
 						else:											# These settings require no argument they are on by being presetn
-							set_default_value()
 							tkvar.set(1)
-							set_tooltip()
+						set_default_value()
+						set_tooltip()
+						
 						break
 					elif '//IGNORE' in cfg_setting:						# Commented Out Values
 						cfg_setting = cfg_setting.split(' ')[-1]		# Remove the //IGNORE
@@ -186,23 +204,26 @@ class Gui_Main(maker.GuiMakerWindowMenu):
 					if setting in bind_values:							# Atm i'm allowing myself to place the tag anywhere in the values 
 						widg.original_value = bind_value
 						widg.set(bind_value)							
-						try:
+						d2_func.add_key(bind_value, setting)
+						with ignored(KeyError):
 							ahk_widg = tab.formRef[setting+'_remap']	# See if there is a remapped hoteky
 							ahk_value = ahk_cfg[bind_value.lower()]
 							ahk_widg.original_value = ahk_value
 							no_symbols = d2_func.convert_akh_symbols(ahk_value, ahk_widg)
 							tk_form = ahk_widg.key_parser(no_symbols, d2_func.ahk_key_list)
 							valve_form = ahk_widg.key_parser(tk_form, v=False)
+							d2_func.add_key(valve_form, setting+'_remap')
 							#~ print('before parse',ahk_value, ' then ', no_symbols, ' tkform ',tk_form)
 							#~ print('after parse', valve_form)
 							ahk_widg.set(valve_form, case='lower')
-						except KeyError:
-							pass
 						break
 						
 	def reload_cfg(self):
-		pass
+		print('TBD FFS!!')
 	def save_cfg(self):
+		if not self.app.good_to_save:
+			print('Unreseolved Key problems bitch')
+			return
 		# Only gets the values and rates the widgets that have been changed
 		for tab in self.formRef['settings'].widget_ref.values():		# The notebook tabs
 			for setting, widget in tab.formRef.items():	
@@ -273,49 +294,51 @@ class ProgramSetup(maker.GuiMakerWindowMenu):
 		add_headings(self.customForm, width=3)
 class PainFadeSettings(maker.GuiMakerWindowMenu):
 	def start(self):
+		#~ self.app.entry_cfg = {'bg':'#5a0b08','insertbackground':'white', 'fg':'white'}
+		
 		self.customForm	= 	[
-			((ttk.Label, 'dota_health_hurt_decay_time_max',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_health_hurt_decay_time_max',		cfg_grid,{})),
+			((ttk.Label, 'dota_health_hurt_decay_time_max',None,		cfg_grid, {}),
+			(tk.Entry, '','dota_health_hurt_decay_time_max',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_health_hurt_decay_time_min',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_health_hurt_decay_time_min',		cfg_grid,{})),
+			(tk.Entry, '','dota_health_hurt_decay_time_min',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_health_hurt_delay',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_health_hurt_delay',		cfg_grid,{})),
+			(tk.Entry, '','dota_health_hurt_delay',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_pain_decay',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_pain_decay',		cfg_grid,{})),
+			(tk.Entry, '','dota_pain_decay',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_pain_factor',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_pain_factor',		cfg_grid,{})),
+			(tk.Entry, '','dota_pain_factor',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_pain_fade_rate',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_pain_fade_rate',		cfg_grid,{})),
+			(tk.Entry, '','dota_pain_fade_rate',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_pain_multiplier',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_pain_multiplier',		cfg_grid,{}))]
+			(tk.Entry, '','dota_pain_multiplier',		cfg_grid, self.app.entry_cfg))]
 		add_default_field(self.customForm)
 		add_headings(self.customForm, width=3)
 class InternetSettings(maker.GuiMakerWindowMenu):
 	def start(self):
 		self.customForm	= 	[
 			((ttk.Label, 'rate', None,		cfg_grid,{}),
-			(ttk.Entry, '', 'rate',		cfg_grid,{})),
+			(tk.Entry, '', 'rate',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'cl_updaterate',None,		cfg_grid,{}),
-			(ttk.Entry, '','cl_updaterate',		cfg_grid,{})),
+			(tk.Entry, '','cl_updaterate',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'cl_cmdrate',None,		cfg_grid,{}),
-			(ttk.Entry, '','cl_cmdrate',		cfg_grid,{})),
+			(tk.Entry, '','cl_cmdrate',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'cl_interp',None,		cfg_grid,{}),
-			(ttk.Entry, '','cl_interp',		cfg_grid,{})),
+			(tk.Entry, '','cl_interp',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'cl_interp_ratio',None,		cfg_grid,{}),
-			(ttk.Entry, '','cl_interp_ratio',		cfg_grid,{})),
+			(tk.Entry, '','cl_interp_ratio',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'cl_smoothtime',None,		cfg_grid,{}),
-			(ttk.Entry, '','cl_smoothtime',		cfg_grid,{}))]
+			(tk.Entry, '','cl_smoothtime',		cfg_grid, self.app.entry_cfg))]
 		add_default_field(self.customForm)
 		add_headings(self.customForm, width=3)
 
@@ -324,183 +347,183 @@ class PerformanceSettings(maker.GuiNoteBook):
 		def start(self):
 			self.customForm	= 	[
 				((ttk.Label, 'dota_cheap_water', None,		cfg_grid,{}),
-				(ttk.Entry, '', 'dota_cheap_water',		cfg_grid,{})),
+				(tk.Entry, '', 'dota_cheap_water',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'cl_globallight_shadow_mode', None,		cfg_grid,{}),
-				(ttk.Entry, '', 'cl_globallight_shadow_mode',		cfg_grid,{})),
+				(tk.Entry, '', 'cl_globallight_shadow_mode',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_deferred_height_fog',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_deferred_height_fog',		cfg_grid,{})),
+				(tk.Entry, '','r_deferred_height_fog',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_deferred_simple_light',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_deferred_simple_light',		cfg_grid,{})),
+				(tk.Entry, '','r_deferred_simple_light',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_screenspace_aa',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_screenspace_aa',		cfg_grid,{})),
+				(tk.Entry, '','r_screenspace_aa',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_vsync',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_vsync',		cfg_grid,{}))]
+				(tk.Entry, '','mat_vsync',		cfg_grid, self.app.entry_cfg))]
 			add_default_field(self.customForm)
 			add_headings(self.customForm, width=3)
 	class LowNext(maker.GuiMakerWindowMenu):
 		def start(self):
 			self.customForm	= 	[				
 				((ttk.Label, 'props_break_max_pieces',None,		cfg_grid,{}),
-				(ttk.Entry, '','props_break_max_pieces',		cfg_grid,{})),
+				(tk.Entry, '','props_break_max_pieces',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'ragdoll_sleepaftertime',None,		cfg_grid,{}),
-				(ttk.Entry, '','ragdoll_sleepaftertime',		cfg_grid,{})),
+				(tk.Entry, '','ragdoll_sleepaftertime',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'g_ragdoll_fadespeed',None,		cfg_grid,{}),
-				(ttk.Entry, '','g_ragdoll_fadespeed',		cfg_grid,{})),
+				(tk.Entry, '','g_ragdoll_fadespeed',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'g_ragdoll_important_maxcount',None,		cfg_grid,{}),
-				(ttk.Entry, '','g_ragdoll_important_maxcount',		cfg_grid,{})),
+				(tk.Entry, '','g_ragdoll_important_maxcount',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'g_ragdoll_lvfadespeed',None,		cfg_grid,{}),
-				(ttk.Entry, '','g_ragdoll_lvfadespeed',		cfg_grid,{})),
+				(tk.Entry, '','g_ragdoll_lvfadespeed',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'g_ragdoll_maxcount',None,		cfg_grid,{}),
-				(ttk.Entry, '','g_ragdoll_maxcount',		cfg_grid,{})),
+				(tk.Entry, '','g_ragdoll_maxcount',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'cl_detaildist',None,		cfg_grid,{}),
-				(ttk.Entry, '','cl_detaildist',		cfg_grid,{})),
+				(tk.Entry, '','cl_detaildist',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'cl_detailfade',None,		cfg_grid,{}),
-				(ttk.Entry, '','cl_detailfade',		cfg_grid,{})),
+				(tk.Entry, '','cl_detailfade',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'locator_text_drop_shadow',None,		cfg_grid,{}),
-				(ttk.Entry, '','locator_text_drop_shadow',		cfg_grid,{})),
+				(tk.Entry, '','locator_text_drop_shadow',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'gpu_mem_level',None,		cfg_grid,{}),
-				(ttk.Entry, '','gpu_mem_level',		cfg_grid,{})),
+				(tk.Entry, '','gpu_mem_level',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mem_level',None,		cfg_grid,{}),
-				(ttk.Entry, '','mem_level',		cfg_grid,{})),
+				(tk.Entry, '','mem_level',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'dota_minimap_use_dynamic_mesh',None,		cfg_grid,{}),
-				(ttk.Entry, '','dota_minimap_use_dynamic_mesh',		cfg_grid,{})),
+				(tk.Entry, '','dota_minimap_use_dynamic_mesh',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_bumpmap',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_bumpmap',		cfg_grid,{})),
+				(tk.Entry, '','mat_bumpmap',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_specular',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_specular',		cfg_grid,{})),
+				(tk.Entry, '','mat_specular',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_phong',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_phong',		cfg_grid,{})),
+				(tk.Entry, '','mat_phong',		cfg_grid, self.app.entry_cfg)),
 				
 				
 				((ttk.Label, 'mp_usehwmvcds',None,		cfg_grid,{}),
-				(ttk.Entry, '','mp_usehwmvcds',		cfg_grid,{})),
+				(tk.Entry, '','mp_usehwmvcds',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mp_usehwmmodels',None,		cfg_grid,{}),
-				(ttk.Entry, '','mp_usehwmmodels',		cfg_grid,{}))]
+				(tk.Entry, '','mp_usehwmmodels',		cfg_grid, self.app.entry_cfg))]
 			add_default_field(self.customForm)
 			add_headings(self.customForm, width=3)
 	class LowNextNext(maker.GuiMakerWindowMenu):
 		def start(self):
 			self.customForm	= 	[
 				((ttk.Label, 'r_worldlights',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_worldlights',		cfg_grid,{})),
+				(tk.Entry, '','r_worldlights',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_decals',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_decals',		cfg_grid,{})),
+				(tk.Entry, '','r_decals',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_decal_overlap_count',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_decal_overlap_count',		cfg_grid,{})),
+				(tk.Entry, '','r_decal_overlap_count',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_worldlightmin',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_worldlightmin',		cfg_grid,{})),
+				(tk.Entry, '','r_worldlightmin',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_drawmodeldecals',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_drawmodeldecals',		cfg_grid,{})),
+				(tk.Entry, '','r_drawmodeldecals',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_decalstaticprops',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_decalstaticprops',		cfg_grid,{})),
+				(tk.Entry, '','r_decalstaticprops',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_flashlightdepthtexture',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_flashlightdepthtexture',		cfg_grid,{})),
+				(tk.Entry, '','r_flashlightdepthtexture',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_rainparticledensity',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_rainparticledensity',		cfg_grid,{})),
+				(tk.Entry, '','r_rainparticledensity',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_shadowfromworldlights',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_shadowfromworldlights',		cfg_grid,{})),
+				(tk.Entry, '','r_shadowfromworldlights',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_DrawDetailProps',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_DrawDetailProps',		cfg_grid,{})),
+				(tk.Entry, '','r_DrawDetailProps',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_FlashlightDetailProps',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_FlashlightDetailProps',		cfg_grid,{})),
+				(tk.Entry, '','r_FlashlightDetailProps',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_shadow_deferred_downsample',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_shadow_deferred_downsample',		cfg_grid,{})),
+				(tk.Entry, '','r_shadow_deferred_downsample',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_WaterDrawReflection',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_WaterDrawReflection',		cfg_grid,{})),
+				(tk.Entry, '','r_WaterDrawReflection',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_renderoverlayfragment',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_renderoverlayfragment',		cfg_grid,{}))]
+				(tk.Entry, '','r_renderoverlayfragment',		cfg_grid, self.app.entry_cfg))]
 			add_default_field(self.customForm)
 			add_headings(self.customForm, width=3)
 	class LowLastResort(maker.GuiMakerWindowMenu):
 		def start(self):
 			self.customForm = [
 				((ttk.Label, 'r_shadowmaxrendered',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_shadowmaxrendered',		cfg_grid,{})),
+				(tk.Entry, '','r_shadowmaxrendered',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_flashlightrendermodels',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_flashlightrendermodels',		cfg_grid,{})),
+				(tk.Entry, '','r_flashlightrendermodels',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_shadows',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_shadows',		cfg_grid,{})),
+				(tk.Entry, '','r_shadows',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_3dsky',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_3dsky',		cfg_grid,{})),
+				(tk.Entry, '','r_3dsky',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_flashlightnodraw',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_flashlightnodraw',		cfg_grid,{})),
+				(tk.Entry, '','r_flashlightnodraw',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_force_low_quality_shadows',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_force_low_quality_shadows',		cfg_grid,{})),
+				(tk.Entry, '','mat_force_low_quality_shadows',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_filtertextures',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_filtertextures',		cfg_grid,{})),
+				(tk.Entry, '','mat_filtertextures',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_disable_bloom',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_disable_bloom',		cfg_grid,{})),
+				(tk.Entry, '','mat_disable_bloom',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_disable_fancy_blending',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_disable_fancy_blending',		cfg_grid,{}))]
+				(tk.Entry, '','mat_disable_fancy_blending',		cfg_grid, self.app.entry_cfg))]
 			add_default_field(self.customForm)
 			add_headings(self.customForm, width=3)
 	class High(maker.GuiMakerWindowMenu):
 		def start(self):
 			self.customForm = [
 				((ttk.Label, 'snd_mix_async',None,		cfg_grid,{}),
-				(ttk.Entry, '','snd_mix_async',		cfg_grid,{})),
+				(tk.Entry, '','snd_mix_async',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'cl_phys_maxticks',None,		cfg_grid,{}),
-				(ttk.Entry, '','cl_phys_maxticks',		cfg_grid,{})),
+				(tk.Entry, '','cl_phys_maxticks',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_grain_enable',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_grain_enable',		cfg_grid,{})),
+				(tk.Entry, '','mat_grain_enable',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_local_contrast_enable',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_local_contrast_enable',		cfg_grid,{})),
+				(tk.Entry, '','mat_local_contrast_enable',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_motion_blur_enabled',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_motion_blur_enabled',		cfg_grid,{})),
+				(tk.Entry, '','mat_motion_blur_enabled',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'mat_picmip',None,		cfg_grid,{}),
-				(ttk.Entry, '','mat_picmip',		cfg_grid,{})),
+				(tk.Entry, '','mat_picmip',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_shadowrendertotexture',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_shadow_half_update_rate',		cfg_grid,{})),
+				(tk.Entry, '','r_shadow_half_update_rate',		cfg_grid, self.app.entry_cfg)),
 				
 				((ttk.Label, 'r_threadeddetailprops',None,		cfg_grid,{}),
-				(ttk.Entry, '','r_threadeddetailprops',		cfg_grid,{}))
+				(tk.Entry, '','r_threadeddetailprops',		cfg_grid, self.app.entry_cfg))
 				]
 			add_default_field(self.customForm)
 			add_headings(self.customForm, width=3)
@@ -524,25 +547,25 @@ class NetGraph(maker.GuiMakerWindowMenu):
 			(BindKeyGrabber, '','netgraph_hotkey',		cfg_grid,{})),
 			
 			((ttk.Label, 'net_graphheight',None,		cfg_grid,{}),
-			(ttk.Entry, '','net_graphheight',		cfg_grid,{})),
+			(tk.Entry, '','net_graphheight',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'net_graphinsetbottom',None,		cfg_grid,{}),
-			(ttk.Entry, '','net_graphinsetbottom',		cfg_grid,{})),
+			(tk.Entry, '','net_graphinsetbottom',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'net_graphinsetleft',None,		cfg_grid,{}),
-			(ttk.Entry, '','net_graphinsetleft',		cfg_grid,{})),
+			(tk.Entry, '','net_graphinsetleft',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'net_graphinsetright',None,		cfg_grid,{}),
-			(ttk.Entry, '','net_graphinsetright',		cfg_grid,{})),
+			(tk.Entry, '','net_graphinsetright',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'net_graphpos',None,		cfg_grid,{}),
-			(ttk.Entry, '','net_graphpos',		cfg_grid,{})),
+			(tk.Entry, '','net_graphpos',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'net_graphproportionalfont',None,		cfg_grid,{}),
-			(ttk.Entry, '','net_graphproportionalfont',		cfg_grid,{})),
+			(tk.Entry, '','net_graphproportionalfont',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'net_graphtext',None,		cfg_grid,{}),
-			(ttk.Entry, '','net_graphtext',		cfg_grid,{}))]
+			(tk.Entry, '','net_graphtext',		cfg_grid, self.app.entry_cfg))]
 		add_default_field(self.customForm)
 		add_remap_field(self.customForm)
 		add_headings(self.customForm, width=4)
@@ -553,34 +576,34 @@ class MiscSettings(maker.GuiMakerWindowMenu):
 			(ttk.Checkbutton, None,'dota_force_right_click_attack',		cfg_grid,{})),
 			
 			((ttk.Label, 'minimap hero icon size',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_minimap_hero_size',		cfg_grid,{})),
+			(tk.Entry, '','dota_minimap_hero_size',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'Threshold delay to accept minimap clicks',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_minimap_misclick_time',		cfg_grid,{})),
+			(tk.Entry, '','dota_minimap_misclick_time',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_recent_event (jump to last ping)',None,		cfg_grid,{}),
 			(BindKeyGrabber, '','dota_recent_event',		cfg_grid,{})),
 			
 			((ttk.Label, 'Health segmenting in the lifebar',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_health_per_vertical_marker',		cfg_grid,{})),
+			(tk.Entry, '','dota_health_per_vertical_marker',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'Disable mouse wheel zoom',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_camera_disable_zoom',		cfg_grid,{})),
+			(tk.Entry, '','dota_camera_disable_zoom',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'Flying height of air units',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_unit_fly_bonus_height',		cfg_grid,{})),
+			(tk.Entry, '','dota_unit_fly_bonus_height',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_minimap_ping_duration',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_minimap_ping_duration',		cfg_grid,{})),
+			(tk.Entry, '','dota_minimap_ping_duration',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_minimap_rune_size',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_minimap_rune_size',		cfg_grid,{})),
+			(tk.Entry, '','dota_minimap_rune_size',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_minimap_tower_defend_distance',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_minimap_tower_defend_distance',		cfg_grid,{})),
+			(tk.Entry, '','dota_minimap_tower_defend_distance',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_sf_game_end_delay',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_sf_game_end_delay',		cfg_grid,{}))
+			(tk.Entry, '','dota_sf_game_end_delay',		cfg_grid, self.app.entry_cfg))
 			
 			#~ ((ttk.Label, 'Escape key allowed to hide game UI',None,	cfg_grid,{}),
 			#~ (ttk.Checkbutton, None,'gameui_allowescape',		cfg_grid,{})),
@@ -600,7 +623,7 @@ class MacroSettings(maker.GuiMakerWindowMenu):
 			(BindKeyGrabber, '','courier_hotkey',		cfg_grid,{})),
 			
 			(maker.BLANK,
-			(ttk.Entry, 'msg','enter message here',	cfg_grid,{})),	#https://www.youtube.com/watch?v=M1WyPCLz0jk
+			(tk.Entry, 'msg','enter message here',	cfg_grid, self.app.entry_cfg)),	#https://www.youtube.com/watch?v=M1WyPCLz0jk
 			
 			((ttk.Label, 'Courier to base macro',None,		cfg_grid,{}),
 			(BindKeyGrabber, '','courier_base_hotkey',		cfg_grid,{})),
@@ -777,7 +800,7 @@ class AboutPage(maker.GuiMakerWindowMenu):
 			(ttk.Label, 'Deny on right mouse click',None,	cfg_grid,{})),
 		
 			((ttk.Label, 'dota_pain_fade_rate',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_pain_fade_rate',		cfg_grid,{})),
+			(tk.Entry, '','dota_pain_fade_rate',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'Netgraph Toggle Hotkey',None,		cfg_grid,{}),
 			(BindKeyGrabber, '','netgraph_hotkey',		cfg_grid,{}))]
@@ -789,31 +812,31 @@ class StandardMenu(maker.GuiMakerWindowMenu):
 			#~ (ttk.Label, '',None,	cfg_grid,{})),
 		
 			((ttk.Label, 'dota_camera_speed',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_camera_speed',		cfg_grid,{})),
+			(tk.Entry, '','dota_camera_speed',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_camera_accelerate',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_camera_accelerate',		cfg_grid,{})),
+			(tk.Entry, '','dota_camera_accelerate',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_player_multipler_orders',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_player_multipler_orders',		cfg_grid,{})),
+			(tk.Entry, '','dota_player_multipler_orders',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_player_units_auto_attack',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_player_units_auto_attack',		cfg_grid,{})),
+			(tk.Entry, '','dota_player_units_auto_attack',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_ability_quick_cast',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_ability_quick_cast',		cfg_grid,{})),
+			(tk.Entry, '','dota_ability_quick_cast',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_hud_healthbar_number',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_hud_healthbar_number',		cfg_grid,{})),
+			(tk.Entry, '','dota_hud_healthbar_number',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_killcam_show',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_killcam_show',		cfg_grid,{})),
+			(tk.Entry, '','dota_killcam_show',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_screen_shake',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_screen_shake',		cfg_grid,{})),
+			(tk.Entry, '','dota_screen_shake',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_always_show_player_names',None,		cfg_grid,{}),
-			(ttk.Entry, '','dota_always_show_player_names',		cfg_grid,{})),
+			(tk.Entry, '','dota_always_show_player_names',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, 'dota_select_courier',None,		cfg_grid,{}),
 			(BindKeyGrabber, '','dota_select_courier',		cfg_grid,{})),
@@ -862,7 +885,7 @@ class D2(maker.GuiMakerWindowMenu):
 			(ttk.Label, '',None,	cfg_grid,{})),
 		
 			((ttk.Label, '',None,		cfg_grid,{}),
-			(ttk.Entry, '','here',		cfg_grid,{})),
+			(tk.Entry, '','here',		cfg_grid, self.app.entry_cfg)),
 			
 			((ttk.Label, '',None,		cfg_grid,{}),
 			(BindKeyGrabber, '','here',		cfg_grid,{}))]

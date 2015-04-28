@@ -21,7 +21,7 @@ Work my program into it better,
 
 Documentation
 
-Add some checks for the types of hotkeys, and duplicates etc
+Add some checks for and duplicates etc
 
 
 Hot key grabber picks up numkeys as CAPS ninstea of lowercase, see if its a problem for valve or not

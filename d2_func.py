@@ -525,6 +525,96 @@ def save_courier_macro(gui_main, ahk_file, current_tab, ahk_grabber, setting, va
 		end = ' '.join(end)
 		ahk_file[row_index] = start + end 
 	
+DOTA_HOTKEYS = {}  # keys that are taken
+DISABLED_KEYS = {} # counts the num of clashses a key has currently
+DISABLED_SETTINGS = {}
+def uniform_key(hotkey):
+	if type(hotkey) == list:
+		hotkey = tuple(hotkey)
+		if len(hotkey) == 1:
+			hotkey = hotkey[0]
+	return hotkey
+
+def add_key(hotkey, setting):
+	# Keys exist in valve form in the dict
+	hotkey = uniform_key(hotkey)
+	if not DOTA_HOTKEYS.get(hotkey):
+		DOTA_HOTKEYS[hotkey] = setting
+	else:
+		print('DUPLICATE IN YOUr file wtf MATE')
+
+def key_validator(hotkey, setting, previous_hotkey):
+	def hotkey_disabled():
+		print('In_disabled', setting, hotkey)
+		try:
+			disabled_settings = DISABLED_KEYS[hotkey]
+			if disabled_settings != []:
+				print(9, DISABLED_KEYS[hotkey])
+				return True	
+			print(11)
+			return False
+		except KeyError:
+			print(10, DISABLED_KEYS)
+			return False
+	
+	def freeup_disabled():		
+		pass
+	
+	#~ print(',previous_hotkey',previous_hotkey)
+	hotkey = uniform_key(hotkey)
+	previous_hotkey = uniform_key(previous_hotkey)
+	value_assigned = DOTA_HOTKEYS.get(hotkey)
+	#~ print('In hotkey validato	r: ', setting, value_assigned)
+	print()
+	print('the hotkey:', hotkey)
+	print('all disabled keys and settings blocking',DISABLED_KEYS)
+	try:
+		print('Currently assigned valued for this hotkey ',DOTA_HOTKEYS[hotkey])
+	except KeyError:
+		print('key is not currently assigned')
+	if not value_assigned and not hotkey_disabled():			
+		print(1)
+		DOTA_HOTKEYS[hotkey] = setting
+		with ignored(KeyError, ValueError):
+			index = DISABLED_KEYS[previous_hotkey].index(setting)
+			del DISABLED_KEYS[previous_hotkey][index]
+		
+		
+		return True
+	elif setting == value_assigned:				# A hotkey grabber is updating itself						
+		print(2)
+		DOTA_HOTKEYS[hotkey] = setting
+		with ignored(KeyError, ValueError):
+			index = DISABLED_KEYS[previous_hotkey].index(setting)
+			del DISABLED_KEYS[previous_hotkey][index]
+		return True
+	elif value_assigned:						# Handling a conflict
+		print(3, value_assigned, setting)
+		del DOTA_HOTKEYS[hotkey]				# Remove from the good list
+		del DOTA_HOTKEYS[previous_hotkey]				# Remove from the good list
+		DISABLED_KEYS[hotkey] = [value_assigned, setting]
+		return False
+	else:
+		print(4)
+		disabled_settings = DISABLED_KEYS[hotkey]
+		try:
+			index = disabled_settings.index(setting)	# Remove From disabled list
+			del DISABLED_KEYS[hotkey][index]
+			#~ del DISABLED_KEYS[previous_key]
+			print(5)
+		except ValueError:								# Add to Disabled List
+			DISABLED_KEYS[hotkey].append(setting)
+			print(6)
+			return False
+		else:
+			if not DISABLED_KEYS[hotkey] or DISABLED_KEYS[hotkey] == [setting] :				# The key is finally free
+				print(7)
+				del DISABLED_KEYS[hotkey]
+				DOTA_HOTKEYS[hotkey] = setting
+				return True
+			else:
+				print(8)
+				return False
 
 if __name__ == '__main__':
 	hi = '1'
