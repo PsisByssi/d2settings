@@ -1,0 +1,62 @@
+# CHECK IF STACK.py WAS DELETED FROM THE dota2-settings folder at the home pc after syncing.
+
+d2_func.save_settings should yield, i loop once over all the changed elements, if that order is sequential than i
+can just yield instead of having to search the entire
+
+Testing normal settings for edits - seems good, could also add or remove tabs if the changes are greater or less than 4 charsI
+Testing Ignoring - seems good, can edit when ignored or unignored
+
+Saving Hotkeys
+	Without rempa field 							- good!
+	With empty remap field, changing dota hk only	- good!
+	With remap field, adding a remap key			- good!
+	With remap field, editing a remap key			- good!
+	With rempap field, editing a dota hk			- good!
+	
+													- alt key remaps to ralt - TBD fix the distinctuion between alt_r and alt_l etc depends if valve has a distinction!
+													- cases are being changed in ahk file..  (is it a problem?)
+Make a key disabler
+	- bind into the hooks to give feedback why a hotkey is failing to be added
+	- build a mechanism to force required keys, either to error out on save, or to be like dota, reset to previous key or sth
+	
+hp toggle	- on adding new have to create the text load block that is getting pointed to
+	- Adding new hero						- good
+	- Removing a hero 						- good
+	- Changing bind key						- good , on laptop shift fn does KP in caps, not a problem!
+	- Changing Toggle hotkey				- good
+
+Courier Message 							- good
+
+Test binds for quote right, minus etc..
+
+Work my program into it better,
+
+Documentation
+
+Hot key grabber picks up numkeys as CAPS ninstea of lowercase, see if its a problem for valve or not
+
+
+Tesint - Testing mode, spawn creatures etc 
+
+delete script
+edit script
+create new script
+
+heroes,
+settings
+items
+
+bind key, script 
+
+
+weird bug, when changing a hotkeyrabber to ttk.hotkeygrabnber get silence crash of that tab
+
+--------------- app deployment
+
+ask for folder to store the stuff in, 
+prompt for steam folder - all settings read from there
+prompt for a) to prompt for permissions to save in the folder, or b) a  folder to export to that doesnt requrie permissions - then tell them each time to move them in to the folder
+
+prompt to install ahk
+
+

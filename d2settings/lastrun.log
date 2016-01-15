@@ -1,0 +1,25 @@
+2015-12-15 11:30:44,366:INFO: Developer status is: False
+2015-12-15 11:30:44,598:INFO: Created cfg file for first time!: flags.cfg
+2015-12-15 11:30:44,599:INFO: Checking if A window is already Open
+2015-12-15 11:30:44,599:INFO: holy shit
+2015-12-15 11:30:44,601:INFO: source : c:/program files (x86)/steam\steamapps\common\dota 2 beta\dota\cfg\autoexec.cfg
+2015-12-15 11:30:44,601:INFO: source : c:/program files (x86)/steam\steamapps\common\dota 2 beta\dota\cfg\dota_binds.ahk
+2015-12-15 11:31:04,889:INFO: Cwd is: C:\Users\timeyyy\Dropbox\programming\d2settings\d2settings\autoexec.cfg
+2015-12-15 11:31:04,889:INFO: lcoation is: c:/program files (x86)/steam\steamapps\common\dota 2 beta\dota\cfg\autoexec.cfg
+2015-12-15 11:31:04,897:ERROR: Unexpected runtime Error Occured
+Traceback (most recent call last):
+  File "d2settings.py", line 290, in <module>
+    main.start()
+  File "d2settings.py", line 92, in start
+    auto_exec_file, ahk_file = self.setup_exec_stuff()
+  File "d2settings.py", line 151, in setup_exec_stuff
+    self.new_exec(dota_folder, auto_exec_file, ahk_file)
+  File "d2settings.py", line 191, in new_exec
+    shutil.copytree('hp', os.path.join(dota_folder, 'hp'))
+  File "C:\Users\timeyyy\.local\share\virtualenvs\d2settings\lib\shutil.py", line 309, in copytree
+    os.makedirs(dst)
+  File "C:\Users\timeyyy\.local\share\virtualenvs\d2settings\lib\os.py", line 241, in makedirs
+    mkdir(name, mode)
+FileExistsError: [WinError 183] Cannot create a file when that file already exists: 'c:/program files (x86)/steam\\steamapps\\common\\dota 2 beta\\dota\\cfg\\hp'
+2015-12-15 11:31:05,054:INFO: Shutdown procedures being run!
+2015-12-15 11:31:05,054:INFO: End..

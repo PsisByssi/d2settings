@@ -1,0 +1,64 @@
+change start sounnd links 
+http://www.playdota.com/forums/showthread.php?p=4807910#post4807910
+http://dev.dota2.com/showthread.php?t=59100&page=3
+
+http://twop.navi-gaming.com/en/dota_2/gameplay/Console_commands
+https://www.google.de/search?q=how+to+set+dota+launc+commands+fromfile&ie=utf-8&oe=utf-8&gws_rd=cr&ei=tbC-VMuJGYn3O-j6gZgG
+http://dota2.gamepedia.com/Launch_Options
+http://www.reddit.com/r/DotA2/comments/ltiul/list_of_useful_console_commands_for_dota_2
+http://www.reddit.com/r/DotA2/comments/2byf9x/most_useful_console_commands/
+
+
+cpu_level "0"				// default 0
+gpu_level "0"				// default 0
+
+cl_particle_fallback_base "4"		// default 4 Base for falling back to cheaper effects under load
+cl_particle_fallback_multiplier "0"	// default 0 Multiplier for falling back to cheaper effects under load
+
+
+// Opacity major health bar divider (default 255, 0=invisible 255=opaque)
+dota_health_marker_major_alpha "255"
+ 
+// Opacity minor health bar divider (default 128, 0=invisible 255=opaque)
+dota_health_marker_minor_alpha "128"
+ 
+//bind "/" "chatwheel_say 8"  //says "Missing!"
+  
+//bind "F3" "toggleshoppanel"
+//bind "F4" "dota_select_courier"               //Select courier
+//bind "t" "dota_purchase_quickbuy"
+//bind "f" "dota_courier_burst"
+//bind "4" "dota_courier_deliver"
+ 
+//QUICK MESSAGES
+ 
+// Rosh timer in chat
+//bind "uparrow" "say_team Roshan; chatwheel_say 57"
+ 
+// Call missing or bind whatever
+//bind "rightarrow" "say_team Enemy has rune"
+//bind "downarrow" "say_team  Enemy has ward here"
+//bind "leftarrow" "say_team care, invis/gank!"
+ 
+//DISPLAY
+ 
+"bind" "[" "exec low.cfg"
+"bind" "]" "exec high.cfg"
+ 
+  
+//PLAYING IN OFFLINE MODE
+alias "offline0" "sv_cheats 1;sv_lan 1;dota_start_ai_game 1;dota_bot_set_difficulty 0;map dota.bsp;"    //Easy Difficulty
+alias "offline1" "sv_cheats 1;sv_lan 1;dota_start_ai_game 1;dota_bot_set_difficulty 1;map dota.bsp;"
+alias "offline2" "sv_cheats 1;sv_lan 1;dota_start_ai_game 1;dota_bot_set_difficulty 2;map dota.bsp;"
+alias "offline3" "sv_cheats 1;sv_lan 1;dota_start_ai_game 1;dota_bot_set_difficulty 3;map dota.bsp;"
+alias "offline4" "sv_cheats 1;sv_lan 1;dota_start_ai_game 1;dota_bot_set_difficulty 4;map dota.bsp;"    //Unfair Difficulty
+ 
+ 
+//Command map - sets the map where you will play
+//dota.bsp - standard map
+//dota_autumn.bsp - autumn map
+//dota_diretide_12.bsp - map Halloween 2012
+//dota_winter.bsp - winter map
+//All existing maps you can see in the folder ..\steamapps\common\dota 2 beta\dota\maps
+ 
+//Launch Dota in offline mode, open console and write in, for example offline1 and it will launch a bot game with Easy Bots

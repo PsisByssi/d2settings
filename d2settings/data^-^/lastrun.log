@@ -1,0 +1,14 @@
+2015-12-03 14:54:46,964:INFO: Developer status is: True
+2015-12-03 14:54:47,145:ERROR: Unexpected runtime Error Occured
+Traceback (most recent call last):
+  File "C:\Users\timeyyy\.babun\cygwin\tmp\tmp7cjtmmd8\scripts\d2settings.py", line 285, in <module>
+  File "C:\Users\timeyyy\.babun\cygwin\tmp\tmp7cjtmmd8\scripts\d2settings.py", line 75, in start
+  File "c:\users\timeyyy\dropbox\programming\tkquick\tkquick\gui\style_defaults.py", line 135, in loadStyle
+    plastik_theme.install(os.path.join('img', 'plastik'))
+  File "c:\users\timeyyy\dropbox\programming\tkquick\tkquick\gui\plastik_theme.py", line 57, in install
+    _load_imgs(imgdir)
+  File "c:\users\timeyyy\dropbox\programming\tkquick\tkquick\gui\plastik_theme.py", line 50, in _load_imgs
+    raise Exception("%r is not a directory, can't load images" % imgdir)
+Exception: 'img\\plastik' is not a directory, can't load images
+2015-12-03 14:54:47,318:INFO: Shutdown procedures being run!
+2015-12-03 14:54:47,318:INFO: End..
