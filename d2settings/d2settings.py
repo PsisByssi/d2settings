@@ -19,7 +19,6 @@ import d2_func
 #TBD IN setup.py wit cxfreeze can i del the manifest shit?
 APP_NAME = 'd2settings'
 GENERAL_CFG_FILE = 'flags.cfg'                          
-DOTA_PATH_CFG = 'd2paths.cfg'
 LOG_FILE = 'lastrun.log'
 
 LOG_UPDATER_USERNAME = 'log_updater'
@@ -42,25 +41,23 @@ class MyAppBuilder(peasoup.AppBuilder):
             # the esky appdata holds new releases and so on our program resides in a subfolder here
             # we dump our data files and cfg files here when operating in a non installed mode
             appdata_path = os.path.join(esky.util.appdir_from_executable(sys.executable), 'data^-^')
+            self.appdata_path = appdata_path # Todo make this whole api better.
             os.makedirs(appdata_path, exist_ok=True)
             file = path_and_file.split(os.sep)[-1]
             return os.path.join(appdata_path, file)
         else:
             path = os.path.join(os.path.dirname(__file__), 'data^-^')
+            self.appdata_path = path
             os.makedirs(path, exist_ok=True)
             return path_and_file
 
 class MainApplication(MyAppBuilder):
-    # def __init__(self):
-    #     '''
-    #     i would like to be able to set the default cfg for each element in my gui_builder
-    #     '''
-    #     super().__init__()
-    
-    def start(self):
-        # this is put in a start method so if we crash on __init__ 
-        # the caller still has his instance reference
+    def __init__(self, args):
+        super().__init__(args)
+        # This initializes the appdata_path variable..
+        self.esky_patherize(os.getcwd())
 
+    def start(self):
         self.ab = peasoup.AppBuilder(__file__)
 
         self.DEVELOPING = DEVELOPING
@@ -116,7 +113,7 @@ class MainApplication(MyAppBuilder):
         toplevel = tk.Toplevel(self.root)
         self.root.after(1000, gui_d2settings.WelcomeMessage, toplevel, self)
         self.cfg['user_pref'] = {}
-        d2_func.find_d2_path(self.cfg['user_pref'])
+        d2_func.find_d2_path(self.cfg['user_pref'], self.appdata_path)
         if not self.cfg['user_pref'].get('steam_path'):
             messagebox.showinfo('Steam folder not found', 'Unable To find the steam folder, please navigate to the steam folder!') #tbd make the documentation match this folder
             self.root.wait_window(gui_d2settings.UserPreferences(toplevel,self))
@@ -127,11 +124,12 @@ class MainApplication(MyAppBuilder):
         # if a normal existing conig just tell them it is getting renamed
         # if old user just load tims config. if anything is funny allow for usage
         # TODO and prompt for settings before saving fuck
-        dota_folder = os.path.join(self.cfg['user_pref']['steam_path'], 'steamapps', 'common', 'dota 2 beta', 'dota', 'cfg')
         if DEVELOPING:
+            dota_folder = os.path.dirname(__file__)
             auto_exec_file = 'autoexec.cfg'
             ahk_file = 'dota_binds.ahk'
         else:
+            dota_folder = os.path.join(self.cfg['user_pref']['steam_path'], 'steamapps', 'common', 'dota 2 beta', 'dota', 'cfg')
             auto_exec_file = os.path.join(dota_folder, 'autoexec.cfg')
             ahk_file = os.path.join(dota_folder, 'dota_binds.ahk')
         logging.info('source : %s' % auto_exec_file)
@@ -149,7 +147,10 @@ class MainApplication(MyAppBuilder):
         if self.first_run:
             if os.path.isfile(auto_exec_file):
                 if d2settings_exec_header():
-                    use_existing = messagebox.askyesno('Existing D2settings autoexec.cfg file found', 'An existing d2settings autoexec cfg file was found, would you like to use it? Clicking no will create a new one with defaults and rename the old one')
+                    use_existing = messagebox.askyesno('Existing D2settings autoexec.cfg file found',
+'An existing d2settings autoexec cfg file was found, would you like to use it? \
+ Clicking no will create a new one with defaults and rename the old one',
+                                                    parent=self.root)
                 else:
                     use_existing = False
                     messagebox.showinfo('backing up your old execfile', 'Your existing exec file has been renamed and moved into backup/')
@@ -189,7 +190,8 @@ class MainApplication(MyAppBuilder):
         backup_ahk = os.path.join(dota_folder, 'backup', 'my_old_ahk_{0}.ahk'.format(num))
         shutil.move(ahk_file, backup_ahk)
         peasoup.set_windows_permissions(backup_ahk)
-        
+        shutil.rmtree(os.path.join(dota_folder, 'hp'))
+
     def new_exec(self, dota_folder, auto_exec_file, ahk_file):
         logging.info('Cwd is: %s' % os.path.join(os.getcwd(), 'autoexec.cfg'))
         logging.info('lcoation is: %s' % os.path.join(os.getcwd(), auto_exec_file))
@@ -199,7 +201,7 @@ class MainApplication(MyAppBuilder):
         peasoup.set_windows_permissions(auto_exec_file)
         peasoup.set_windows_permissions(ahk_file)
         for file in os.listdir(os.path.join(dota_folder, 'hp')):
-            peasoup.set_windows_permissions(file)
+            peasoup.set_windows_permissions(os.path.join(dota_folder, file))
         peasoup.set_windows_permissions(os.path.join(dota_folder, 'hp'))
     
     @rate_limited(1/2, mode='kill')                     # Max one message every 2 seconds

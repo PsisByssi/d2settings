@@ -487,7 +487,7 @@ def save_courier_macro(gui_main, ahk_file, current_tab, ahk_grabber, setting, va
         end = ' '.join(end)
         ahk_file[row_index] = start + end 
 
-def find_d2_path(user_pref):
+def find_d2_path(user_pref, data_folder):
     '''sets the default paths if no cfg file'''
     # user_path is a dict and mutable, no need to return the changes!
     def get_steam_path():
@@ -507,9 +507,8 @@ def find_d2_path(user_pref):
         user_pref["steam_path"] = steam_path
         user_pref["save_mode"] = "steam_path"
     else:
-    # elif not user_pref.get("alt_path"):
-        user_pref["alt_path"] = os.path.join(os.getcwd(), "output") #TODO MAKE THIS IN THE RIGHT FOLDER FML
         user_pref["save_mode"] = "alt_path"
+    user_pref["alt_path"] = os.path.join(data_folder, "output")
 
 if __name__ == '__main__':
     pass
