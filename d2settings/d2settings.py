@@ -41,11 +41,13 @@ class MyAppBuilder(peasoup.AppBuilder):
         if not self.is_installed() and hasattr(sys, 'frozen'):
             # the esky appdata holds new releases and so on our program resides in a subfolder here
             # we dump our data files and cfg files here when operating in a non installed mode
-            appdata_path = os.path.join(self.esky_bootstrap_path(), 'data^-^')
+            appdata_path = os.path.join(esky.util.appdir_from_executable(sys.executable), 'data^-^')
             os.makedirs(appdata_path, exist_ok=True)
             file = path_and_file.split(os.sep)[-1]
             return os.path.join(appdata_path, file)
         else:
+            path = os.path.join(os.path.dirname(__file__), 'data^-^')
+            os.makedirs(path, exist_ok=True)
             return path_and_file
 
 class MainApplication(MyAppBuilder):
@@ -58,7 +60,9 @@ class MainApplication(MyAppBuilder):
     def start(self):
         # this is put in a start method so if we crash on __init__ 
         # the caller still has his instance reference
-        
+
+        self.ab = peasoup.AppBuilder(__file__)
+
         self.DEVELOPING = DEVELOPING
         
         self.root = tk.Tk()
@@ -68,8 +72,12 @@ class MainApplication(MyAppBuilder):
         style_defaults.TIMS_fg = "white"
         style_defaults.TIMS_fg_heading = '#e0e0e0'
         style_defaults.TIMS_bgButton = 'red'
-        self.ttk_style = style_defaults.loadStyle(self.root)
-        #~ self.ttk_style.configure('TEntry', foreground='white', fieldbackground='#5a0b08', insertbackground='red')
+        if self.ab.is_installed():
+            self.ttk_style = style_defaults.loadStyle(self.root)
+        else:
+            path = os.path.join(os.path.dirname(__file__), 'img', 'plastik')
+            self.ttk_style = style_defaults.loadStyle(self.root, plastik_folder=path)
+        # self.ttk_style.configure('TEntry', foreground='white', fieldbackground='#5a0b08', insertbackground='red')
         self.entry_cfg = {'bg':'#5a0b08','insertbackground':'white', 'fg':'white', 'width':'18'}
         self.ttk_style.configure('TButton', background ='red')
         self.ttk_style.configure('hotkeygrabber.TLabel',    foreground='white', 
@@ -80,8 +88,7 @@ class MainApplication(MyAppBuilder):
         self.ttk_style.map('hotkeygrabber.TLabel', relief=[('focus','sunken'),('disabled','ridge')],
                                                     background=[('disabled','grey')],
                                                     foreground=[('disabled','maroon')])
-        
-        self.ab = peasoup.AppBuilder(__file__)
+
         global GENERAL_CFG_FILE
         self.create_cfg(GENERAL_CFG_FILE)
         self.check_if_open()

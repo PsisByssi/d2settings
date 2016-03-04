@@ -309,7 +309,9 @@ class Gui_Main(maker.GuiMakerWindowMenu):
         
 class SettingsNoteBook(maker.GuiNoteBook):          # Main controller notebook, used to switch the pain on the right of the treeviewer
     def start(self):
+        self.background = '#232327'
         self.style = {'bg':'#232327','bd':5,'relief':'flat'}
+        # self.nbStyle = {'style':'imgTNotebook'}
         #~ self.conPack = {'expand':'1','fill':'both', 'side':'top'}
         #~ self.config(padx=40,pady=40)     
         self.widgList = [ProgramSetup,MiscSettings,NetGraph,InternetSettings,MacroSettings,PerformanceSettings,PainFadeSettings,StandardMenu,HpSegment,Testing]
@@ -320,7 +322,8 @@ class SettingsNoteBook(maker.GuiNoteBook):          # Main controller notebook, 
     def finish(self):
         for i in range(0,len(self.widgList)):       # Makes the frame grab focus instead of the hotkeygrabber
             self.widget_ref[i].configure(takefocus=1)
-class ProgramSetup(maker.GuiMakerWindowMenu):                       
+
+class ProgramSetup(maker.GuiMakerWindowMenu):
     help_url = 'launch'
     def start(self):
         self.customForm =   [
@@ -579,6 +582,7 @@ class PerformanceSettings(maker.GuiNoteBook):
             add_default_field(self.customForm)
             add_headings(self.customForm, width=3)
     def start(self):
+        self.background = '#232327'
         self.widgList = [self.LowReccommended, self.LowNext, self.LowNextNext, self.LowLastResort, self.High]
         self.tabText = ['Reccommended','Now try these','Or try these','only if you are desperate','High Performance settings!']
         #~ self.nbStyle=c_hiddenNotebook    # only woring in main not in running from script

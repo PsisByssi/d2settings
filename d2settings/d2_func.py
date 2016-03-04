@@ -506,10 +506,10 @@ def find_d2_path(user_pref):
     if steam_path:
         user_pref["steam_path"] = steam_path
         user_pref["save_mode"] = "steam_path"
+    else:
     # elif not user_pref.get("alt_path"):
-    #     user_pref["alt_path"] = os.path.join(os.getcwd(), "output") #TODO MAKE THIS IN THE RIGHT FOLDER FML
-    #     user_pref["save_mode"] = "alt_path"
-    return user_pref
-    
+        user_pref["alt_path"] = os.path.join(os.getcwd(), "output") #TODO MAKE THIS IN THE RIGHT FOLDER FML
+        user_pref["save_mode"] = "alt_path"
+
 if __name__ == '__main__':
     pass
