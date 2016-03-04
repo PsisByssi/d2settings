@@ -2,14 +2,14 @@ import tkinter as tk
 from tkinter import messagebox
 import sys
 import os
-import json
-import shutil 
+import shutil
 import logging
 
 from tkquick.gui.tools import rate_limited
 import tkquick.gui.style_defaults as style_defaults
 import tkquick.gui.maker as maker
-from timstools import InMemoryWriter, ignored
+from timstools import InMemoryWriter
+from timstools import ignored as suppress
 import peasoup
 import esky
 
@@ -49,11 +49,11 @@ class MyAppBuilder(peasoup.AppBuilder):
             return path_and_file
 
 class MainApplication(MyAppBuilder):
-    def __init__(self):
-        '''
-        i would like to be able to set the default cfg for each element in my gui_builder
-        '''
-        super().__init__('d2settings')
+    # def __init__(self):
+    #     '''
+    #     i would like to be able to set the default cfg for each element in my gui_builder
+    #     '''
+    #     super().__init__()
     
     def start(self):
         # this is put in a start method so if we crash on __init__ 
@@ -81,7 +81,7 @@ class MainApplication(MyAppBuilder):
                                                     background=[('disabled','grey')],
                                                     foreground=[('disabled','maroon')])
         
-        self.ab = peasoup.AppBuilder(name=APP_NAME)
+        self.ab = peasoup.AppBuilder(__file__)
         global GENERAL_CFG_FILE
         self.create_cfg(GENERAL_CFG_FILE)
         self.check_if_open()
@@ -272,36 +272,34 @@ class MainApplication(MyAppBuilder):
 if __name__ == '__main__':
     DEVELOPING = False
     if len(sys.argv) == 2 and sys.argv[1] == 'developing':
-        DEVELOPING = False
+        DEVELOPING = True
     if DEVELOPING:
         sys.setrecursionlimit(150)
         print('-- files will be read from cwd')
         print('-- files will be saved as xzy_saved.xyz')
         print('-- Splash screen will be hidden')
         
-    app_framework_instance = MyAppBuilder(name=APP_NAME)
+    app_framework_instance = MyAppBuilder(__file__)
+    LOG_FILE = peasoup.add_date(LOG_FILE)
     LOG_FILE = app_framework_instance.uac_bypass(LOG_FILE)
     peasoup.setup_logger(LOG_FILE)
+    if not DEVELOPING:
+        with suppress(Exception):
+            raven_client = peasoup.setup_raven()
     logging.info('Developer status is: %s'% DEVELOPING)
-    tk.CallWrapper = peasoup.TkErrorCatcher
+    tk.CallWrapper = peasoup.gui.TkErrorCatcher
    
     try:
-        main = MainApplication()
+        main = MainApplication(__file__)
+        main.pcfg['log_file'] = LOG_FILE
         main.start()
     except Exception as err:
-        peasoup.handle_fatal_exception(restarter=app_framework_instance.app_restart,
-                                        error=err,
-                                        file=LOG_FILE,
-                                        host=LOG_UPDATER_HOST,
-                                        username=LOG_UPDATER_USERNAME,
-                                        password=LOG_UPDATER_PASSWORD,
-                                        port=LOG_UPDATER_PORT,
-                                        )
+        main.logexception(logger=main.logger)
+        restarter = peasoup.Restarter()
     finally:
         main.shutdown()
         sys.exit()
-        
-        
+
 '''
 auto attack off
 a, will start autoattacking shit around,

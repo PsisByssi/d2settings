@@ -1,0 +1,18 @@
+{
+  "app_name": "d2settings",
+  "config_file": "state.cfg",
+  "log_file": "",
+
+  "log_module": "logging",
+  "log_server_host": "ftp.jak101.ipage.com",
+  "log_server_username": "timeyyy",
+  "log_server_password": "cGVuMTUh",
+  "log_server_port": 2222,
+  "log_server_method": "sftp",
+  "log_server_interface": "background",
+
+  "raven_dsn": "https://b0de73ebb4e4483f9b2088034e4a2ca1:5bd792aa4d1a40319e5c6242548bf125@app.getsentry.com/67019",
+  "raven_loglevel": "WARNING",
+
+  "esky_update_url": "https://github.com/PsisByssi/d2settings/tree/gh-pages/_downloads"
+}
