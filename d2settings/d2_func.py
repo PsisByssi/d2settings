@@ -1,9 +1,9 @@
 import csv
 import glob
 import os
-import json
 import logging
 import winreg
+import hashlib
 
 from timstools import InMemoryWriter
 from timstools import ignored
@@ -509,6 +509,32 @@ def find_d2_path(user_pref, data_folder):
     else:
         user_pref["save_mode"] = "alt_path"
     user_pref["alt_path"] = os.path.join(data_folder, "output")
+
+def modified_convars(appdir, convardir):
+    '''
+    returns True if the user has modified the game_convars.vcfg file.
+    Returns False if it is the original or the one modified by us
+    '''
+    f_orig = os.path.join(appdir, 'game_convars_original.vcfg')
+    d_orig = hashlib.md5()
+    d_orig.update(f_orig.encode('utf-8'))
+    digest_orig = d_orig.digest()
+
+    f_ours = os.path.join(appdir, 'game_convars.vcfg')
+    d_ours = hashlib.md5()
+    d_ours.update(f_ours.encode('utf-8'))
+    digest_ours = d_ours.digest()
+
+    f_user = os.path.join(convardir, 'game_convars.vcfg')
+    d_user = hashlib.md5()
+    d_user.update(f_user.encode('utf-8'))
+    digest_user = d_user.digest()
+
+    if digest_user in (digest_ours, digest_orig):
+        return False
+    else:
+        return True
+
 
 if __name__ == '__main__':
     pass

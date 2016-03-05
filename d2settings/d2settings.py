@@ -12,7 +12,7 @@ from timstools import InMemoryWriter
 from timstools import ignored as suppress
 import peasoup
 import esky
-
+from timstools import preserve_cwd
 
 import gui_d2settings
 import d2_func
@@ -32,7 +32,7 @@ class MyAppBuilder(peasoup.AppBuilder):
         result = peasoup.AppBuilder.uac_bypass(self, *args, **kwargs)
         return self.esky_patherize(result)
 
-    def esky_patherize(self, path_and_file):    #TBD I THINK ESKY HAS A FUNC THAT DOES THIS
+    def esky_patherize(self, path_and_file):   #TBD I THINK ESKY HAS A FUNC THAT DOES THIS
         '''Don't want to get cfg files etc rewritten on new app updates!
         This moves our data file paths into the proper place
         when i find where to put data files on posix i have to change this TBD
@@ -126,6 +126,9 @@ class MainApplication(MyAppBuilder):
         self.root.mainloop()
 
     def first_time_setup(self):
+        '''
+        Tries to get the steampath, otherwise prompts the user for a path to save to
+        '''
         toplevel = tk.Toplevel(self.root)
         self.root.after(1000, gui_d2settings.WelcomeMessage, toplevel, self)
         self.cfg['user_pref'] = {}
@@ -145,7 +148,8 @@ class MainApplication(MyAppBuilder):
             auto_exec_file = 'autoexec.cfg'
             ahk_file = 'dota_binds.ahk'
         else:
-            dota_folder = os.path.join(self.cfg['user_pref']['steam_path'], 'steamapps', 'common', 'dota 2 beta', 'dota', 'cfg')
+            dota_folder = os.path.join(self.cfg['user_pref']['steam_path'],
+                                       'steamapps', 'common', 'dota 2 beta', 'game', 'dota', 'cfg')
             auto_exec_file = os.path.join(dota_folder, 'autoexec.cfg')
             ahk_file = os.path.join(dota_folder, 'dota_binds.ahk')
         logging.info('source : %s' % auto_exec_file)
@@ -208,9 +212,13 @@ class MainApplication(MyAppBuilder):
         peasoup.set_windows_permissions(backup_ahk)
         shutil.rmtree(os.path.join(dota_folder, 'hp'))
 
+
+    @preserve_cwd
     def new_exec(self, dota_folder, auto_exec_file, ahk_file):
-        logging.info('Cwd is: %s' % os.path.join(os.getcwd(), 'autoexec.cfg'))
-        logging.info('lcoation is: %s' % os.path.join(os.getcwd(), auto_exec_file))
+        appdir = self.rel_path('__file__')
+        os.chdir(appdir)
+        logging.info('copying execfile from : %s' % os.path.join(appdir, auto_exec_file))
+
         shutil.copyfile('autoexec.cfg', auto_exec_file)
         shutil.copyfile('dota_binds.ahk', ahk_file)
         shutil.copytree('hp', os.path.join(dota_folder, 'hp'))
@@ -219,6 +227,14 @@ class MainApplication(MyAppBuilder):
         for file in os.listdir(os.path.join(dota_folder, 'hp')):
             peasoup.set_windows_permissions(os.path.join(dota_folder, file))
         peasoup.set_windows_permissions(os.path.join(dota_folder, 'hp'))
+
+        if d2_func.modified_convars(appdir=appdir, convardir=dota_folder):
+            messagebox.showinfo('Modified game_convars.vcfg detected', 'A modified game_convars.vcfg file \
+has been detected.\n Please add "exec" "autoexec.cfg" to your game_convarss.vcfg file under "config"{"convars"{ADD HERE}} ')
+        else:
+            shutil.copyfile('game_convars.vcfg', dota_folder)
+            peasoup.set_windows_permissions(os.path.join(dota_folder, 'game_convars.vcfg'))
+
     
     @rate_limited(1/2, mode='kill')                     # Max one message every 2 seconds
     def send_ui_feedback(self, message, image=None):    # Show a message and or image to the user for confirmation or a message etc
