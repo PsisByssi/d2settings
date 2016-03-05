@@ -10,6 +10,7 @@ data_files = [('img', glob(r'.\img\*.*')),
             ('hp', glob(r'.\hp\*.*')),
             ('help',glob(r'.\help\*.*')),
             ('output',glob(r'.\output\*.*')),
+            ('autobots',glob(r'.\autobots\*.*')),
             ('', ['autoexec.cfg']),
             ('', ['dota_binds.ahk']),]
 
@@ -18,7 +19,8 @@ executables = [Executable('d2settings.py', gui_only=True,)]#, targetName = "uncr
 
 ESKY_OPTIONS = {
     "freezer_module": "cxfreeze",
-    "includes": ['tkinter']
+    "includes": ['tkinter'],
+    "compress": None,
     }
 
 setup(name="d2settings",
