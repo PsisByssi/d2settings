@@ -313,6 +313,7 @@ Back it up somewhere and remove it before using d2settings...')
                 # tbd thread safe here?
                 if messagebox.askyesno(
                         'D2settings Updated!', 'A new version of D2settings has been installed\n Restart D2settings now?'):
+                    # Todo
                     self.tkinter_queue.put(self.restart)
                     self.tkinter_queue.put(self.root.quit)
             else:
