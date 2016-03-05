@@ -7,6 +7,7 @@ import hashlib
 import shutil
 from distutils.dir_util import copy_tree
 from tkinter import messagebox
+import sys
 
 import peasoup
 from timstools import InMemoryWriter
@@ -46,7 +47,7 @@ valve_key_list = {'Tab': 'tab',
             'KP_Enter': 'kp_enter', 
             'KP_Insert': 'kp_ins', 
             'KP_Delete': 'kp_del', 
-            'KP_Divide': 'kp_slash',
+            'KP_Divide': 'kp_divide',
             'KP_Multiply': 'kp_multiply', 
             'KP_Subtract': 'kp_minus', 
             'KP_Add': 'kp_plus', 

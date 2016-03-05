@@ -415,8 +415,6 @@ class PerformanceSettings(maker.GuiNoteBook):
                 ((ttk.Label, 'r_screenspace_aa',None,       cfg_grid,{}),
                 (tk.Entry, '','r_screenspace_aa',       cfg_grid, self.app.entry_cfg)),
                 
-                ((ttk.Label, 'mat_vsync',None,      cfg_grid,{}),
-                (tk.Entry, '','mat_vsync',      cfg_grid, self.app.entry_cfg))]
             add_default_field(self.customForm)
             add_headings(self.customForm, width=3)
     class LowNext(maker.GuiMakerWindowMenu):
@@ -597,27 +595,7 @@ class NetGraph(maker.GuiMakerWindowMenu):
         self.customForm =   [
             ((ttk.Label, 'Netgraph Toggle Hotkey',None,     cfg_grid,{}),
             (BindKeyGrabber, '','netgraph_hotkey',      cfg_grid,{})),
-            
-            ((ttk.Label, 'net_graphheight',None,        cfg_grid,{}),
-            (tk.Entry, '','net_graphheight',        cfg_grid, self.app.entry_cfg)),
-            
-            ((ttk.Label, 'net_graphinsetbottom',None,       cfg_grid,{}),
-            (tk.Entry, '','net_graphinsetbottom',       cfg_grid, self.app.entry_cfg)),
-            
-            ((ttk.Label, 'net_graphinsetleft',None,     cfg_grid,{}),
-            (tk.Entry, '','net_graphinsetleft',     cfg_grid, self.app.entry_cfg)),
-            
-            ((ttk.Label, 'net_graphinsetright',None,        cfg_grid,{}),
-            (tk.Entry, '','net_graphinsetright',        cfg_grid, self.app.entry_cfg)),
-            
-            ((ttk.Label, 'net_graphpos',None,       cfg_grid,{}),
-            (tk.Entry, '','net_graphpos',       cfg_grid, self.app.entry_cfg)),
-            
-            ((ttk.Label, 'net_graphproportionalfont',None,      cfg_grid,{}),
-            (tk.Entry, '','net_graphproportionalfont',      cfg_grid, self.app.entry_cfg)),
-            
-            ((ttk.Label, 'net_graphtext',None,      cfg_grid,{}),
-            (tk.Entry, '','net_graphtext',      cfg_grid, self.app.entry_cfg))]
+        ]
         add_default_field(self.customForm)
         add_remap_field(self.customForm)
         add_headings(self.customForm, width=4)
@@ -642,9 +620,6 @@ class MiscSettings(maker.GuiMakerWindowMenu):
             ((ttk.Label, 'Disable mouse wheel zoom',None,       cfg_grid,{}),
             (tk.Entry, '','dota_camera_disable_zoom',       cfg_grid, self.app.entry_cfg)),
             
-            ((ttk.Label, 'Flying height of air units',None,     cfg_grid,{}),
-            (tk.Entry, '','dota_unit_fly_bonus_height',     cfg_grid, self.app.entry_cfg)),
-            
             ((ttk.Label, 'dota_minimap_ping_duration',None,     cfg_grid,{}),
             (tk.Entry, '','dota_minimap_ping_duration',     cfg_grid, self.app.entry_cfg)),
             
@@ -653,9 +628,6 @@ class MiscSettings(maker.GuiMakerWindowMenu):
             
             ((ttk.Label, 'dota_minimap_tower_defend_distance',None,     cfg_grid,{}),
             (tk.Entry, '','dota_minimap_tower_defend_distance',     cfg_grid, self.app.entry_cfg)),
-            
-            ((ttk.Label, 'dota_sf_game_end_delay',None,     cfg_grid,{}),
-            (tk.Entry, '','dota_sf_game_end_delay',     cfg_grid, self.app.entry_cfg))
             
             #~ ((ttk.Label, 'Escape key allowed to hide game UI',None,  cfg_grid,{}),
             #~ (ttk.Checkbutton, None,'gameui_allowescape',     cfg_grid,{})),

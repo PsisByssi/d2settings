@@ -174,7 +174,6 @@ class MainApplication(MyAppBuilder):
                     return False
 
         inst_args = (dota_folder, auto_exec_file, ahk_file, self.rel_path('__file__'))
-        import pdb;pdb.set_trace()
         if self.first_run:
             if not os.path.isfile(auto_exec_file):
                 d2_func.install_requirements(*inst_args,
