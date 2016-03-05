@@ -51,6 +51,21 @@ class MyAppBuilder(peasoup.AppBuilder):
             os.makedirs(path, exist_ok=True)
             return path_and_file
 
+    @staticmethod
+    def rel_path(*file_path):
+        '''
+        gives relative paths to files, works when frozen or unfrozen
+        to get the root path just pass in the string __file__
+        '''
+        if hasattr(sys, 'frozen'):
+            if file_path[0] == '__file__':
+                return sys.executable
+            return os.path.join(os.path.dirname(sys.executable), *file_path)
+        else:
+            if file_path[0] == '__file__':
+                return __file__
+            return os.path.join(os.path.dirname(__file__), *file_path)
+
 class MainApplication(MyAppBuilder):
     def __init__(self, args):
         super().__init__(args)
@@ -58,7 +73,7 @@ class MainApplication(MyAppBuilder):
         self.esky_patherize(os.getcwd())
 
     def start(self):
-        self.ab = peasoup.AppBuilder(__file__)
+        self.ab = peasoup.AppBuilder(self.rel_path('__file__'))
 
         self.DEVELOPING = DEVELOPING
         
@@ -72,7 +87,8 @@ class MainApplication(MyAppBuilder):
         if self.ab.is_installed():
             self.ttk_style = style_defaults.loadStyle(self.root)
         else:
-            path = os.path.join(os.path.dirname(__file__), 'img', 'plastik')
+            path = self.rel_path('img', 'plastik')
+            print(path)
             self.ttk_style = style_defaults.loadStyle(self.root, plastik_folder=path)
         # self.ttk_style.configure('TEntry', foreground='white', fieldbackground='#5a0b08', insertbackground='red')
         self.entry_cfg = {'bg':'#5a0b08','insertbackground':'white', 'fg':'white', 'width':'18'}
@@ -125,7 +141,7 @@ class MainApplication(MyAppBuilder):
         # if old user just load tims config. if anything is funny allow for usage
         # TODO and prompt for settings before saving fuck
         if DEVELOPING:
-            dota_folder = os.path.dirname(__file__)
+            dota_folder = self.rel_path('__file__')
             auto_exec_file = 'autoexec.cfg'
             ahk_file = 'dota_binds.ahk'
         else:
@@ -287,8 +303,8 @@ if __name__ == '__main__':
         print('-- files will be read from cwd')
         print('-- files will be saved as xzy_saved.xyz')
         print('-- Splash screen will be hidden')
-        
-    app_framework_instance = MyAppBuilder(__file__)
+
+    app_framework_instance = MyAppBuilder(MyAppBuilder.rel_path('__file__'))
     LOG_FILE = peasoup.add_date(LOG_FILE)
     LOG_FILE = app_framework_instance.uac_bypass(LOG_FILE)
     peasoup.setup_logger(LOG_FILE)
@@ -299,7 +315,7 @@ if __name__ == '__main__':
     tk.CallWrapper = peasoup.gui.TkErrorCatcher
    
     try:
-        main = MainApplication(__file__)
+        main = MainApplication(MyAppBuilder.rel_path('__file__'))
         main.pcfg['log_file'] = LOG_FILE
         main.start()
     except Exception as err:
