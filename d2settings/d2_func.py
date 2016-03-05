@@ -4,10 +4,15 @@ import os
 import logging
 import winreg
 import hashlib
+import shutil
+from distutils.dir_util import copy_tree
+from tkinter import messagebox
 
+import peasoup
 from timstools import InMemoryWriter
 from timstools import ignored
 from timstools import only_numerics
+from timstools import preserve_cwd
 
 valve_key_list = {'Tab': 'tab', 
             'Return': 'enter', 
@@ -510,6 +515,7 @@ def find_d2_path(user_pref, data_folder):
         user_pref["save_mode"] = "alt_path"
     user_pref["alt_path"] = os.path.join(data_folder, "output")
 
+# Todo this isn't tested and working
 def modified_convars(appdir, convardir):
     '''
     returns True if the user has modified the game_convars.vcfg file.
@@ -535,6 +541,41 @@ def modified_convars(appdir, convardir):
     else:
         return True
 
+@preserve_cwd
+def install_requirements(dota_folder, auto_exec_file, ahk_file, appdir, overwrite=False):
+    '''
+    installs our files in the users dota folder that we require,
+    The overwrite false option is used to make sure the user has all files
+    if he is attempting to use an old install
+
+    The overwrite true option is used because the user may be trying to
+    reinstall fresh but forgets to remove some stuff
+    '''
+    # Todo, there should be no reason to overwrite files ever..
+    os.chdir(appdir)
+    logging.info('copying execfile from : %s' % os.path.join(appdir, auto_exec_file))
+
+    if overwrite or not os.path.exists(auto_exec_file):
+        shutil.copyfile('autoexec.cfg', auto_exec_file)
+        peasoup.set_windows_permissions(auto_exec_file)
+    if overwrite or not os.path.exists(ahk_file):
+        shutil.copyfile('dota_binds.ahk', ahk_file)
+        peasoup.set_windows_permissions(ahk_file)
+    if overwrite or not os.path.exists(os.path.join(dota_folder, 'hp')):
+        copy_tree('hp', os.path.join(dota_folder, 'hp'))
+        for file in os.listdir(os.path.join(dota_folder, 'hp')):
+            print(file)
+            peasoup.set_windows_permissions(os.path.join(dota_folder, 'hp', file))
+        peasoup.set_windows_permissions(os.path.join(dota_folder, 'hp'))
+
+    if modified_convars(appdir=appdir, convardir=dota_folder):
+        messagebox.showinfo('Modified game_convars.vcfg detected', 'A modified game_convars.vcfg file \
+has been detected (we are unable to add the exec load automatically).\n Please add "exec" "autoexec.cfg" to your game_convarss.vcfg file under "config"{"convars"{ADD HERE}} ')
+        sys.exit()
+    else:
+        if overwrite or not os.path.exists(auto_exec_file):
+            shutil.copyfile('game_convars.vcfg', dota_folder)
+            peasoup.set_windows_permissions(os.path.join(dota_folder, 'game_convars.vcfg'))
 
 if __name__ == '__main__':
     pass

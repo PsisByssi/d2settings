@@ -12,7 +12,6 @@ from timstools import InMemoryWriter
 from timstools import ignored as suppress
 import peasoup
 import esky
-from timstools import preserve_cwd
 
 import gui_d2settings
 import d2_func
@@ -59,12 +58,22 @@ class MyAppBuilder(peasoup.AppBuilder):
         '''
         if hasattr(sys, 'frozen'):
             if file_path[0] == '__file__':
-                return sys.executable
+                return os.path.dirname(sys.executable)
             return os.path.join(os.path.dirname(sys.executable), *file_path)
         else:
             if file_path[0] == '__file__':
-                return __file__
+                return os.path.dirname(os.path.realpath(__file__))
             return os.path.join(os.path.dirname(__file__), *file_path)
+
+    @staticmethod
+    def __file__():
+        '''
+        the __file__ doesn't work when frozen, this works always
+        '''
+        if hasattr(sys, 'frozen'):
+            return sys.executable
+        else:
+            return __file__
 
 class MainApplication(MyAppBuilder):
     def __init__(self, args):
@@ -73,7 +82,7 @@ class MainApplication(MyAppBuilder):
         self.esky_patherize(os.getcwd())
 
     def start(self):
-        self.ab = peasoup.AppBuilder(self.rel_path('__file__'))
+        self.ab = peasoup.AppBuilder(self.__file__())
 
         self.DEVELOPING = DEVELOPING
         
@@ -164,35 +173,65 @@ class MainApplication(MyAppBuilder):
                 else:
                     return False
 
+        inst_args = (dota_folder, auto_exec_file, ahk_file, self.rel_path('__file__'))
+        import pdb;pdb.set_trace()
         if self.first_run:
-            if os.path.isfile(auto_exec_file):
+            if not os.path.isfile(auto_exec_file):
+                d2_func.install_requirements(*inst_args,
+                                            overwrite=False)
+            else:
                 if d2settings_exec_header():
                     use_existing = messagebox.askyesno('Existing D2settings autoexec.cfg file found',
 'An existing d2settings autoexec cfg file was found, would you like to use it? \
  Clicking no will create a new one with defaults and rename the old one',
                                                     parent=self.root)
+                    if not use_existing:
+                        # backup an existing d2setting execfile on first run
+                        self.backup_existing(dota_folder, auto_exec_file, ahk_file)
+                        d2_func.install_requirements(*inst_args,
+                                                    overwrite=False)
+                    else:
+                        # Mainly as i move shit around while developing
+                        d2_func.install_requirements(*inst_args,
+                                                    overwrite=False)
+
                 else:
-                    use_existing = False
+                    # backup an existing Non d2setting execfile on first run
+                    self.backup_existing(dota_folder, auto_exec_file, ahk_file)
                     messagebox.showinfo('backing up your old execfile', 'Your existing exec file has been renamed and moved into backup/')
-                if not use_existing:
-                    self.backup_existing_exec(dota_folder, auto_exec_file, ahk_file)
-                    self.new_exec(dota_folder, auto_exec_file, ahk_file)
-            else:
-                self.new_exec(dota_folder, auto_exec_file, ahk_file)
+                    d2_func.install_requirements(*inst_args,
+                                                overwrite=False)
         else:
             if not d2settings_exec_header():
-                # ToDo make ways to fix this...
                 if os.path.isfile(auto_exec_file):
-                    messagebox.showerror('The d2settings exec file is missing', 'The d2settings exec has been removed..', 'Change First run = True in flags.cfg')
+                    do = messagebox.askyesnocancel('The d2settings exec file is missing', 'The d2settings exec has been removed..\
+\n Would you like to do a fresh install and overide any existing settings?\n \
+Yes (overwrite), No (Install without overwrite), Cancel (do nothing)')
+                    if do:
+                        d2_func.install_requirements(*inst_args,
+                                                    overwrite=True)
+                    elif do == False:
+                        d2_func.install_requirements(*inst_args,
+                                                    overwrite=False)
+                    elif do == None:
+                        pass
                 else:
-                    messagebox.showerror('The d2settings exec file is missing', 'A non d2settings exec has been detected', 'Change First run = True in flags.cfg')
+                    messagebox.showerror('The d2settings exec file is missing', 'A non d2settings exec has been detected\n \
+Back it up somewhere and remove it before using d2settings...')
                 sys.exit()
+            else:
+                # Just a sanity check incase the user deleted some of our files..
+                d2_func.install_requirements(*inst_args,
+                                            overwrite=False)
 
         return auto_exec_file, ahk_file
 
 
 
-    def backup_existing_exec(self, dota_folder, auto_exec_file, ahk_file):
+    def backup_existing(self, dota_folder, auto_exec_file, ahk_file):
+        '''
+        Moves the execfile and ahk file and backs them up
+        '''
         backup_file = os.path.join(dota_folder, 'backup', 'my_old_autoexec.cfg')
         num = 1
         try:
@@ -213,29 +252,6 @@ class MainApplication(MyAppBuilder):
         shutil.rmtree(os.path.join(dota_folder, 'hp'))
 
 
-    @preserve_cwd
-    def new_exec(self, dota_folder, auto_exec_file, ahk_file):
-        appdir = self.rel_path('__file__')
-        os.chdir(appdir)
-        logging.info('copying execfile from : %s' % os.path.join(appdir, auto_exec_file))
-
-        shutil.copyfile('autoexec.cfg', auto_exec_file)
-        shutil.copyfile('dota_binds.ahk', ahk_file)
-        shutil.copytree('hp', os.path.join(dota_folder, 'hp'))
-        peasoup.set_windows_permissions(auto_exec_file)
-        peasoup.set_windows_permissions(ahk_file)
-        for file in os.listdir(os.path.join(dota_folder, 'hp')):
-            peasoup.set_windows_permissions(os.path.join(dota_folder, file))
-        peasoup.set_windows_permissions(os.path.join(dota_folder, 'hp'))
-
-        if d2_func.modified_convars(appdir=appdir, convardir=dota_folder):
-            messagebox.showinfo('Modified game_convars.vcfg detected', 'A modified game_convars.vcfg file \
-has been detected.\n Please add "exec" "autoexec.cfg" to your game_convarss.vcfg file under "config"{"convars"{ADD HERE}} ')
-        else:
-            shutil.copyfile('game_convars.vcfg', dota_folder)
-            peasoup.set_windows_permissions(os.path.join(dota_folder, 'game_convars.vcfg'))
-
-    
     @rate_limited(1/2, mode='kill')                     # Max one message every 2 seconds
     def send_ui_feedback(self, message, image=None):    # Show a message and or image to the user for confirmation or a message etc
         '''
@@ -312,7 +328,7 @@ has been detected.\n Please add "exec" "autoexec.cfg" to your game_convarss.vcfg
     
 if __name__ == '__main__':
     DEVELOPING = False
-    if len(sys.argv) == 2 and sys.argv[1] == 'developing':
+    if len(sys.argv) == 2 and sys.argv[1] in ('developing', 'develop'):
         DEVELOPING = True
     if DEVELOPING:
         sys.setrecursionlimit(150)
@@ -320,7 +336,7 @@ if __name__ == '__main__':
         print('-- files will be saved as xzy_saved.xyz')
         print('-- Splash screen will be hidden')
 
-    app_framework_instance = MyAppBuilder(MyAppBuilder.rel_path('__file__'))
+    app_framework_instance = MyAppBuilder(MyAppBuilder.__file__())
     LOG_FILE = peasoup.add_date(LOG_FILE)
     LOG_FILE = app_framework_instance.uac_bypass(LOG_FILE)
     peasoup.setup_logger(LOG_FILE)
@@ -331,7 +347,7 @@ if __name__ == '__main__':
     tk.CallWrapper = peasoup.gui.TkErrorCatcher
    
     try:
-        main = MainApplication(MyAppBuilder.rel_path('__file__'))
+        main = MainApplication(MyAppBuilder.__file__())
         main.pcfg['log_file'] = LOG_FILE
         main.start()
     except Exception as err:
